@@ -1,0 +1,7 @@
+[package]
+name = "connect-four-ai-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+connect-four-ai = { path = "../core", version = "0.1.0" }
