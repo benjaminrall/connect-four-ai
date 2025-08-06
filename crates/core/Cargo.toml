@@ -5,3 +5,4 @@ edition = "2021"
 description = "A high-performance Rust library for a perfect Connect Four AI solver."
 
 [dependencies]
+lru = "0.16.0"

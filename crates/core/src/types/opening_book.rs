@@ -1,0 +1,3 @@
+pub struct OpeningBook {
+
+}

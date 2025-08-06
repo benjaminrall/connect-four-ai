@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! A high-performance Rust library for a perfect Connect Four AI solver.
+//!
+//! This library provides functionality to compute the optimal move for any given
+//! Connect Four board state. Since Connect Four is a solved game, this AI plays perfectly.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod types;
+mod solver;
+mod utils;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use types::{Position, PositionParsingError, TranspositionTable, MoveEntry, MoveSorter};
+pub use solver::Solver;
+pub use utils::*;

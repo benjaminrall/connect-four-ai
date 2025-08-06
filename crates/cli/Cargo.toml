@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 connect-four-ai = { path = "../core", version = "0.1.0" }
+indicatif = "0.18.0"
