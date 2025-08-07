@@ -190,16 +190,13 @@ impl Position {
 
     /// Returns a unique key for the current position.
     pub fn get_key(&self) -> u64 {
-        // let key = self.position + self.mask + Self::BOTTOM_MASK;
-        // let mirrored_key = Self::mirror(key);
-        //
-        // println!("{} {} {}", key, mirrored_key, key.min(mirrored_key));
-        // key.min(mirrored_key)
         self.position + self.mask + Self::BOTTOM_MASK
     }
 
+
     /// Returns the mirrored key for the current position.
-    pub fn mirror(key: u64) -> u64 {
+    pub fn get_mirrored_key(&self) -> u64 {
+        let key = self.get_key();
         let mut mirrored_key = 0;
 
         for col in 0..Self::WIDTH {

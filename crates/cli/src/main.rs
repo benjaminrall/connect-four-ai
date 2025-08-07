@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::time::{Duration, Instant};
 use indicatif::{ProgressBar, ProgressStyle};
-use connect_four_ai::{load_test_data, Position, Solver};
+use connect_four_ai::{load_test_data, Position, Solver, TTEntry};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // let board_string = "\
@@ -23,15 +23,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     // println!("{:?}", pos2);
     //
     // println!("{:?}", compute_optimal_move(&pos));
-
-    let pos = Position::from_moves("")?;
-
-    let mut solver = Solver::default();
-
-    // println!("{:?}", solver.solve(&pos));
+    // let pos = Position::from_moves("274121776146")?;
+    // println!("{:?}", pos.get_key());
+    // return Ok(());
+    // let actual_score = 4;
+    // let mut solver = Solver::default();
+    // assert_eq!(actual_score, solver.solve(&pos));
 
     // return Ok(());
-    test("test-data/begin-medium")?;
+    // test("test-data/begin-medium")?;
 
     Ok(())
 }

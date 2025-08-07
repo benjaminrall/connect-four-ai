@@ -7,6 +7,6 @@ mod types;
 mod solver;
 mod utils;
 
-pub use types::{Position, PositionParsingError, TranspositionTable, MoveEntry, MoveSorter};
+pub use types::{Position, PositionParsingError, TranspositionTable, MoveEntry, MoveSorter, TTEntry, TTFlag};
 pub use solver::Solver;
 pub use utils::*;
