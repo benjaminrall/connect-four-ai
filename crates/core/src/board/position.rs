@@ -1,29 +1,46 @@
+//! A compact, computationally efficient bitboard representation of Connect 4 positions.
+
 use crate::PositionParsingError;
 
+/// Represents a Connect Four position compactly as a bitboard.
+///
+/// The standard, 6x7 Connect Four board can be represented unambiguously using 49 bits
+/// in the following bit order:
+///
+/// ```comment
+///   6 13 20 27 34 41 48
+///  ---------------------
+/// | 5 12 19 26 33 40 47 |
+/// | 4 11 18 25 32 39 46 |
+/// | 3 10 17 24 31 38 45 |
+/// | 2  9 16 23 30 37 44 |
+/// | 1  8 15 22 29 36 43 |
+/// | 0  7 14 21 28 35 42 |
+///  ---------------------
+///```
+///
+/// The extra row of bits at the top identifies full columns and prevents bits from overflowing
+/// into the next column. For computational efficiency, positions are stored in practice using two
+/// `u64` numbers: one to store a mask of all occupied tiles, and the other to store a mask of the
+/// current player's tiles.
 #[derive(Debug, Copy, Clone)]
 pub struct Position {
+    /// A mask of the current player's tiles.
     position: u64,
+    /// A mask of all occupied tiles.
     mask: u64,
+    /// The number of moves taken to reach the position.
     moves: usize,
 }
 
 impl Position {
-    /// The width of the board.
     pub const WIDTH: usize = 7;
-
-    /// The height of the board.
     pub const HEIGHT: usize = 6;
-
-    /// The size of the board.
     pub const BOARD_SIZE: usize = Self::WIDTH * Self::HEIGHT;
-
-    /// The minimum score for the board.
     pub const MIN_SCORE: i8 = -(Self::BOARD_SIZE as i8) / 2 + 3;
-
-    /// The maximum score for the board.
     pub const MAX_SCORE: i8 = (Self::BOARD_SIZE as i8 + 1) / 2 - 3;
 
-    /// A bitmask for the bottom cell of each column.
+    /// A mask for the bottom row of the board.
     const BOTTOM_MASK: u64 = const {
         let mut mask = 0;
         let mut i = 0;
@@ -34,9 +51,17 @@ impl Position {
         mask
     };
 
-    /// A bitmask for all positions within the board.
+    /// A mask for all positions within the board, excluding the extra overflow row.
     const BOARD_MASK: u64 = Self::BOTTOM_MASK * ((1 << Self::HEIGHT) - 1);
 
+    /// Creates a new `Position` instance for the initial position of the game.
+    pub fn new() -> Position {
+        Position {
+            position: 0,
+            mask: 0,
+            moves: 0,
+        }
+    }
 
     /// Parses a `Position` from a string representation of the Connect Four board.
     ///
@@ -58,7 +83,7 @@ impl Position {
     ///
     /// Returns a `PositionParsingError` if the input string is invalid.
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```rust
     ///  use connect_four_ai::Position;
@@ -78,18 +103,16 @@ impl Position {
     ///  assert_eq!(pos.get_moves(), 12)
     /// ```
     pub fn from_board_string(board_string: &str) -> Result<Position, PositionParsingError> {
-        // Converts the board string to lowercase and removes invalid characters
-        let chars = board_string
+        let chars: Vec<char> = board_string
             .to_lowercase()
             .chars()
             .filter(|c| matches!(c, '.' | 'o' | 'x'))
-            .collect::<Vec<char>>();
+            .collect();
 
         // Validates that there is the exact number of characters required for a full board
-        let length = chars.len();
-        if length != Self::BOARD_SIZE {
+        if chars.len() != Self::BOARD_SIZE {
             return Err(PositionParsingError::InvalidBoardStringLength {
-                actual: length,
+                actual: chars.len(),
                 expected: Self::BOARD_SIZE,
             });
         }
@@ -99,8 +122,12 @@ impl Position {
         let mut mask = 0;
         let mut moves = 0;
 
-        // Loops through the board characters to construct the `Position` bitboards
+        // Loops through the board string's characters to construct the `Position` bitboards
         for (i, &current_char) in chars.iter().enumerate() {
+            if current_char == '.' {
+                continue;
+            }
+
             // Calculates board coordinates from the current index
             let row = Self::HEIGHT - (i / Self::WIDTH) - 1;
             let col = i % Self::WIDTH;
@@ -110,12 +137,11 @@ impl Position {
 
             // Sets a '1' in the relevant bit if the condition is true, otherwise '0'
             let position_bit = (current_char == 'x') as u64;
-            let mask_bit = (current_char != '.') as u64;
 
             // Uses a bitwise OR to set the calculated bits in the appropriate bitboards
             position |= position_bit << bit_index;
-            mask |= mask_bit << bit_index;
-            moves += mask_bit as usize;
+            mask |= 1 << bit_index;
+            moves += 1;
         }
 
         Ok(Position { position, mask, moves })
@@ -138,7 +164,7 @@ impl Position {
     ///
     /// Returns a `PositionParsingError` if the move sequence is invalid.
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```rust
     ///  use connect_four_ai::Position;
@@ -151,12 +177,7 @@ impl Position {
     ///  assert_eq!(pos.get_moves(), 12)
     /// ```
     pub fn from_moves(move_sequence: &str) -> Result<Position, PositionParsingError> {
-        // Creates the initial position
-        let mut pos = Position {
-            position: 0,
-            mask: 0,
-            moves: 0,
-        };
+        let mut pos = Position::new();
 
         // Applies the move sequence to the position in order
         for (i, c) in move_sequence.chars().enumerate() {
@@ -182,15 +203,17 @@ impl Position {
     }
 
 
-    /// Returns the number of moves that have occurred to reach the current position.
+    /// Returns the number of moves played to reach the current position.
+    #[inline(always)]
     pub fn get_moves(&self) -> usize {
         self.moves
     }
 
 
     /// Returns a unique key for the current position.
+    #[inline(always)]
     pub fn get_key(&self) -> u64 {
-        self.position + self.mask + Self::BOTTOM_MASK
+        self.position + self.mask
     }
 
 
@@ -201,14 +224,12 @@ impl Position {
 
         for col in 0..Self::WIDTH {
             let mirrored_col = Self::WIDTH - 1 - col;
-
             let column_data = key & Self::column_mask(col);
+            let shift = (mirrored_col as isize - col as isize).abs() * (Self::HEIGHT + 1) as isize;
 
-            mirrored_key |= if col <= mirrored_col {
-                let shift = (mirrored_col - col) * (Self::HEIGHT + 1);
+            mirrored_key |= if col < mirrored_col {
                 column_data << shift
             } else {
-                let shift = (col - mirrored_col) * (Self::HEIGHT + 1);
                 column_data >> shift
             };
         }
@@ -226,6 +247,7 @@ impl Position {
     /// # Returns
     ///
     /// True if the column is playable, false if the column is already full.
+    #[inline(always)]
     pub fn is_playable(&self, col: usize) -> bool {
         self.mask & Self::top_mask_col(col) == 0
     }
@@ -250,6 +272,7 @@ impl Position {
     /// # Arguments
     ///
     /// * `col`: 0-based index of a playable column.
+    #[inline(always)]
     pub fn play(&mut self, col: usize) {
         // Switches the bits of the current and opponent player
         self.position ^= self.mask;
@@ -262,6 +285,7 @@ impl Position {
 
 
     /// Returns a mask for the possible moves the current player can make.
+    #[inline(always)]
     pub fn possible(&self) -> u64 {
         (self.mask + Self::BOTTOM_MASK) & Self::BOARD_MASK
     }
@@ -369,6 +393,7 @@ impl Position {
     /// # Returns
     ///
     /// A bitmask with a singular one in the top of cell the column.
+    #[inline(always)]
     pub const fn top_mask_col(col: usize) -> u64 {
         1 << (Self::HEIGHT - 1 + col * (Self::HEIGHT + 1))
     }
@@ -382,6 +407,7 @@ impl Position {
     /// # Returns
     ///
     /// A bitmask with a single one in the bottom cell of the column.
+    #[inline(always)]
     pub const fn bottom_mask_col(col: usize) -> u64 {
         1 << (col * (Self::HEIGHT + 1))
     }
@@ -395,6 +421,7 @@ impl Position {
     /// # Returns
     ///
     /// A bitmask with a one in all cells of the column.
+    #[inline(always)]
     pub const fn column_mask(col: usize) -> u64 {
         ((1 << Self::HEIGHT) - 1) << (col * (Self::HEIGHT + 1))
     }

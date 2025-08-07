@@ -1,7 +1,8 @@
-use std::error::Error;
-use std::time::{Duration, Instant};
+use connect_four_ai::{load_test_data, OpeningBook, Position, Solver};
 use indicatif::{ProgressBar, ProgressStyle};
-use connect_four_ai::{load_test_data, Position, Solver, TTEntry};
+use std::error::Error;
+use std::path::Path;
+use std::time::{Duration, Instant};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // let board_string = "\
@@ -30,9 +31,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     // let mut solver = Solver::default();
     // assert_eq!(actual_score, solver.solve(&pos));
 
-    // return Ok(());
-    // test("test-data/begin-medium")?;
+    // let pos = Position::new();
+    // println!("{:?}", Solver::new().solve(&pos));
+    // Ok(())
 
+    // test("test-data/begin-hard")?;
+    // return Ok(());
+
+    let path = Path::new("book.bin");
+    let mut book = OpeningBook::load(path).unwrap_or(OpeningBook::new());
+    // A depth of 8-10 is a good starting point.
+    // Be aware that generation time increases exponentially.
+    let max_depth = 7;
+    for depth in 0..=max_depth {
+        println!("Generating opening book to depth {}...", depth);
+        book.generate(depth);
+        println!("Generation complete. Found {} positions.", book.map.len());
+
+        println!("Saving to {:?}...", path);
+        book.save(path).expect("Failed to save book file.");
+        println!("Done.");
+    }
     Ok(())
 }
 
@@ -49,7 +68,7 @@ fn test(path: &str) -> Result<(), Box<dyn Error>> {
     let progress_bar = ProgressBar::new(test_positions.len() as u64).with_style(progress_bar_style);
 
 
-    let mut solver = Solver::default();
+    let mut solver = Solver::new();
     for pos in progress_bar.wrap_iter(test_positions.iter()) {
         // println!("{:?}", pos.position);
         solver.reset();

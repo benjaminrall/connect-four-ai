@@ -3,10 +3,10 @@
 //! This library provides functionality to compute the optimal move for any given
 //! Connect Four board state. Since Connect Four is a solved game, this AI plays perfectly.
 
-mod types;
-mod solver;
 mod utils;
+mod board;
+mod engine;
 
-pub use types::{Position, PositionParsingError, TranspositionTable, MoveEntry, MoveSorter, TTEntry, TTFlag};
-pub use solver::Solver;
+pub use engine::{Solver, TTFlag, TTEntry, TranspositionTable, MoveEntry, MoveSorter, OpeningBook};
+pub use board::{Position, PositionParsingError};
 pub use utils::*;
