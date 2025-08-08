@@ -37,6 +37,7 @@ impl Position {
     pub const WIDTH: usize = 7;
     pub const HEIGHT: usize = 6;
     pub const BOARD_SIZE: usize = Self::WIDTH * Self::HEIGHT;
+    pub const CENTRE: usize = Self::WIDTH / 2;
     pub const MIN_SCORE: i8 = -(Self::BOARD_SIZE as i8) / 2 + 3;
     pub const MAX_SCORE: i8 = (Self::BOARD_SIZE as i8 + 1) / 2 - 3;
 
@@ -54,7 +55,7 @@ impl Position {
     /// A mask for all positions within the board, excluding the extra overflow row.
     const BOARD_MASK: u64 = Self::BOTTOM_MASK * ((1 << Self::HEIGHT) - 1);
 
-    /// Creates a new `Position` instance for the initial position of the game.
+    /// Creates a new `Position` instance for the initial state of the game.
     pub fn new() -> Position {
         Position {
             position: 0,
@@ -147,7 +148,6 @@ impl Position {
         Ok(Position { position, mask, moves })
     }
 
-
     /// Parses a `Position` from a string of 1-indexed moves.
     ///
     /// The input string should contain a sequence of columns played, indexed from 1.
@@ -202,41 +202,52 @@ impl Position {
         Ok(pos)
     }
 
-
     /// Returns the number of moves played to reach the current position.
     #[inline(always)]
     pub fn get_moves(&self) -> usize {
         self.moves
     }
 
-
     /// Returns a unique key for the current position.
+    ///
+    /// This key is unique to each pair of horizontally symmetrical positions, as such
+    /// positions will always have the same solution.
     #[inline(always)]
     pub fn get_key(&self) -> u64 {
-        self.position + self.mask
+        // Calculates the standard key for a position
+        let key = self.position + self.mask;
+
+        // Calculates the key of the mirrored position
+        let (mirrored_pos, mirrored_mask) = self.get_mirrored_bitmasks();
+        let mirrored_key = mirrored_pos + mirrored_mask;
+
+        // Takes the minimum to ensure that symmetrical positions resolve to the same key
+        key.min(mirrored_key)
     }
 
+    /// Returns both of the positions' bitmasks, mirrored horizontally.
+    fn get_mirrored_bitmasks(&self) -> (u64, u64) {
+        let mut mirrored_position = 0;
+        let mut mirrored_mask = 0;
 
-    /// Returns the mirrored key for the current position.
-    pub fn get_mirrored_key(&self) -> u64 {
-        let key = self.get_key();
-        let mut mirrored_key = 0;
-
-        for col in 0..Self::WIDTH {
+        // Swaps columns within the position and mask up to the centre column
+        for col in 0..Self::CENTRE {
             let mirrored_col = Self::WIDTH - 1 - col;
-            let column_data = key & Self::column_mask(col);
-            let shift = (mirrored_col as isize - col as isize).abs() * (Self::HEIGHT + 1) as isize;
-
-            mirrored_key |= if col < mirrored_col {
-                column_data << shift
-            } else {
-                column_data >> shift
-            };
+            let shift = (mirrored_col - col) * (Self::HEIGHT + 1);
+            mirrored_position |= ((self.position & Self::column_mask(col)) << shift)
+                | ((self.position & Self::column_mask(mirrored_col)) >> shift);
+            mirrored_mask |= ((self.mask & Self::column_mask(col)) << shift)
+                | ((self.mask & Self::column_mask(mirrored_col)) >> shift);
         }
 
-        mirrored_key
-    }
+        // Keeps the centre column unchanged if there are an odd number of columns
+        if Self::WIDTH & 1 == 1 {
+            mirrored_position |= self.position & Self::column_mask(Self::CENTRE);
+            mirrored_mask |= self.mask & Self::column_mask(Self::CENTRE);
+        }
 
+        (mirrored_position, mirrored_mask)
+    }
 
     /// Indicates whether a given column is playable.
     ///
@@ -252,7 +263,6 @@ impl Position {
         self.mask & Self::top_mask_col(col) == 0
     }
 
-
     /// Indicates whether the current player wins by playing a given column.
     ///
     /// # Arguments
@@ -265,7 +275,6 @@ impl Position {
     pub fn is_winning_move(&self, col: usize) -> bool {
         self.winning_positions() & self.possible() & Self::column_mask(col) > 0
     }
-
 
     /// Plays a move in the given column.
     ///
@@ -283,13 +292,11 @@ impl Position {
         self.moves += 1;
     }
 
-
     /// Returns a mask for the possible moves the current player can make.
     #[inline(always)]
     pub fn possible(&self) -> u64 {
         (self.mask + Self::BOTTOM_MASK) & Self::BOARD_MASK
     }
-
 
     /// Returns a mask for the possible non-losing moves the current player can make.
     pub fn possible_non_losing_moves(&self) -> u64 {
@@ -311,18 +318,15 @@ impl Position {
         possible & !(opponent_wins >> 1)
     }
 
-
     /// Returns a mask for the current player's winning positions.
     fn winning_positions(&self) -> u64 {
         Self::compute_winning_positions(self.position, self.mask)
     }
 
-
     /// Returns a mask for the opponent's winning positions.
     fn opponent_winning_positions(&self) -> u64 {
         Self::compute_winning_positions(self.position ^ self.mask, self.mask)
     }
-
 
     /// Computes a mask for all of a player's winning positions.
     ///
@@ -368,7 +372,6 @@ impl Position {
         r & (Self::BOARD_MASK ^ mask)
     }
 
-
     /// Scores a possible move by counting the number of winning spots
     /// the player has after playing it.
     ///
@@ -382,6 +385,29 @@ impl Position {
     /// The move's score.
     pub fn score_move(&self, move_bit: u64) -> u8 {
         Self::compute_winning_positions(self.position | move_bit, self.mask).count_ones() as u8
+    }
+
+    /// Indicates whether the position has been won.
+    ///
+    /// Returns true if a 4-alignment exists in the position, false otherwise.
+    pub fn is_won_position(&self) -> bool {
+        // Horizontal alignment
+        let m = self.position & (self.position >> (Self::HEIGHT+1));
+        if m & (m >> (2*(Self::HEIGHT+1))) > 0 { return true; }
+
+        // Diagonal alignment 1
+        let m = self.position & (self.position >> Self::HEIGHT);
+        if m & (m >> (2*Self::HEIGHT)) > 0 { return true; }
+
+        // Diagonal alignment 2
+        let m = self.position & (self.position >> (Self::HEIGHT+2));
+        if m & (m >> (2*(Self::HEIGHT+2))) > 0 { return true; }
+
+        // Vertical alignment
+        let m = self.position & (self.position >> 1);
+        if m & (m >> 2) > 0 { return true; }
+
+        false
     }
 
     /// Returns a mask for the top element of the given column.

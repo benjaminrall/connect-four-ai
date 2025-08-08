@@ -1,3 +1,5 @@
+//! An enum for errors that can occur when parsing Connect Four positions.
+
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 

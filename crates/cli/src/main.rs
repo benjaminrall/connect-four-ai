@@ -1,4 +1,4 @@
-use connect_four_ai::{load_test_data, OpeningBook, Position, Solver};
+use connect_four_ai::{load_test_data, OpeningBook, OpeningBookGenerator, Position, Solver};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::error::Error;
 use std::path::Path;
@@ -16,9 +16,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     //
     // let pos = Position::from_board_string(board_string)?;
     //
-    // let moves = "444343533654";
-    //
-    // let pos2 = Position::from_moves(moves)?;
+
+    // let moves = "111111444444666666";
+    // let moves2 = "222222444444777777";
+    // let pos = Position::from_moves(moves)?;
+    // let pos2 = Position::from_moves(moves2)?;
+    // println!("{:?} {:?}", pos.get_key(), pos2.get_key());
     //
     // println!("{:?}", pos);
     // println!("{:?}", pos2);
@@ -35,23 +38,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     // println!("{:?}", Solver::new().solve(&pos));
     // Ok(())
 
-    // test("test-data/begin-hard")?;
+    // test("test-data/begin-hard-small")?;
     // return Ok(());
 
-    let path = Path::new("book.bin");
-    let mut book = OpeningBook::load(path).unwrap_or(OpeningBook::new());
+    let depth = 7;
+    let book = OpeningBookGenerator::generate(depth);
+    book.save(Path::new("book.bin"))?;
+
+    // let mut book = OpeningBook::load(path).unwrap_or(OpeningBook::new());
     // A depth of 8-10 is a good starting point.
     // Be aware that generation time increases exponentially.
-    let max_depth = 7;
-    for depth in 0..=max_depth {
-        println!("Generating opening book to depth {}...", depth);
-        book.generate(depth);
-        println!("Generation complete. Found {} positions.", book.map.len());
-
-        println!("Saving to {:?}...", path);
-        book.save(path).expect("Failed to save book file.");
-        println!("Done.");
-    }
+    // let depth = 8;
+    // println!("Generating opening book to depth {}...", depth);
+    // book.generate(depth);
+    // println!("Generation complete. Found {} positions.", book.map.len());
+    //
+    // println!("Saving to {:?}...", path);
+    // book.save(path).expect("Failed to save book file.");
+    // println!("Done.");
     Ok(())
 }
 
@@ -68,7 +72,7 @@ fn test(path: &str) -> Result<(), Box<dyn Error>> {
     let progress_bar = ProgressBar::new(test_positions.len() as u64).with_style(progress_bar_style);
 
 
-    let mut solver = Solver::new();
+    let mut solver = Solver::with_opening_book();
     for pos in progress_bar.wrap_iter(test_positions.iter()) {
         // println!("{:?}", pos.position);
         solver.reset();
@@ -77,6 +81,9 @@ fn test(path: &str) -> Result<(), Box<dyn Error>> {
         let best_score = solver.solve(&pos.position);
         let finish_time = Instant::now();
 
+        if best_score != pos.score {
+            println!("{:?}", pos.position);
+        }
         assert_eq!(best_score, pos.score);
         times.push(finish_time - start_time);
         explored_positions.push(solver.explored_positions);

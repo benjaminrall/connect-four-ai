@@ -28,6 +28,7 @@ name = "connect-four-ai"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "indicatif",
  "rayon",
  "serde",
 ]
@@ -106,6 +107,7 @@ checksum = "70a646d946d06bedbbc4cac4c218acf4bbf2d87757a784857025f4d447e4e1cd"
 dependencies = [
  "console",
  "portable-atomic",
+ "rayon",
  "unicode-width",
  "unit-prefix",
  "web-time",

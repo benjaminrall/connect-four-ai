@@ -1,3 +1,5 @@
+//! A simple container for potential Connect Four moves, sorted by a score heuristic.
+
 use crate::Position;
 
 /// Represents a single potential move entry.

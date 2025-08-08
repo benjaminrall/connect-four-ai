@@ -8,3 +8,4 @@ description = "A high-performance Rust library for a perfect Connect Four AI sol
 serde = { version = "1.0.219", features = ["derive"] }
 bincode = "1.3.3"
 rayon = "1.10.0"
+indicatif = { version = "0.18.0", features = ["rayon"] }

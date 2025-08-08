@@ -1,4 +1,7 @@
+//! Provides the core solving logic for the Connect Four AI.
+
 use crate::{MoveSorter, OpeningBook, Position, TTFlag, TranspositionTable};
+use std::path::Path;
 
 // This line embeds the generated book file directly into your program's binary.
 // The path is relative to the current source file (solver.rs).
@@ -18,7 +21,7 @@ pub struct Solver {
     pub explored_positions: usize,
 
     /// The transposition table used for caching search results
-    transposition_table: TranspositionTable,
+    pub transposition_table: TranspositionTable,
 
     /// The opening book for instant lookups of early-game positions.
     pub opening_book: Option<OpeningBook>,
@@ -37,13 +40,29 @@ impl Solver {
         columns
     };
 
-    /// Creates a new `Solver` instance.
+    /// Creates a new, empty `Solver` instance.
     pub fn new() -> Solver {
+        Solver {
+            explored_positions: 0,
+            transposition_table: TranspositionTable::new(),
+            opening_book: None
+        }
+    }
+
+    /// Creates a new `Solver` instance with the pre-packaged opening book.
+    pub fn with_opening_book() -> Solver {
         Solver {
             explored_positions: 0,
             transposition_table: TranspositionTable::new(),
             opening_book: OpeningBook::from_static_bytes(OPENING_BOOK_BYTES).ok()
         }
+    }
+
+    /// Attempts to load an opening book to be used by the solver.
+    /// Returns whether the opening book was successfully loaded.
+    pub fn load_opening_book(&mut self, path: &Path) -> bool{
+        self.opening_book = OpeningBook::load(path).ok();
+        self.opening_book.is_some()
     }
 
     /// Resets the solver's state.
@@ -74,6 +93,7 @@ impl Solver {
         // Before starting the search, checks if the answer is in the opening book
         if let Some(book) = &self.opening_book {
             if let Some(score) = book.get(position) {
+                // println!("{:?} {} {}", position, position.get_key(), position.get_mirrored_key());
                 return score;
             }
         }
@@ -101,10 +121,8 @@ impl Solver {
                 min = score
             }
         }
-
         min
     }
-
 
     /// The core negamax search function with alpha-beta pruning.
     fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
