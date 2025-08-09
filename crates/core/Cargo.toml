@@ -3,6 +3,10 @@ name = "connect-four-ai"
 version = "0.1.0"
 edition = "2021"
 description = "A high-performance Rust library for a perfect Connect Four AI solver."
+license = "MIT"
+repository = "https://github.com/benjaminrall/connect-four-ai"
+homepage = "https://github.com/benjaminrall/connect-four-ai"
+readme = "README.md"
 
 [dependencies]
 serde = { version = "1.0.219", features = ["derive"] }
