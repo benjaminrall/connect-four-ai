@@ -5,7 +5,7 @@ use std::path::Path;
 
 // This line embeds the generated book file directly into your program's binary.
 // The path is relative to the current source file (solver.rs).
-const OPENING_BOOK_BYTES: &'static [u8] = include_bytes!("book.bin");
+const OPENING_BOOK_BYTES: &'static [u8] = include_bytes!("books/book-11.bin");
 
 /// A strong solver for finding the exact score of a Connect Four position.
 ///
