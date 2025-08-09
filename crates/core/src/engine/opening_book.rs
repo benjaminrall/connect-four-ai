@@ -1,15 +1,12 @@
 //! An opening book for Connect Four, which stores pre-computed scores for opening game positions.
 
 use crate::Position;
-use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 /// A cache that stores pre-computed scores for opening game positions.
 ///
