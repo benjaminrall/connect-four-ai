@@ -147,7 +147,7 @@ fn load_test_data(path: &str) -> Result<Vec<(String, TestCase)>, Box<dyn Error>>
 /// Runs a Connect Four solver against all test cases and aggregates the results.
 fn run_benchmark(test_cases: &[(String, TestCase)]) -> Result<BenchmarkResults, Box<dyn Error>> {
     let mut results = BenchmarkResults::default();
-    let mut solver = Solver::with_opening_book();
+    let mut solver = Solver::new();
 
     let progress_bar = create_progress_bar(test_cases.len() as u64);
 

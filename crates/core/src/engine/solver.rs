@@ -40,21 +40,21 @@ impl Solver {
         columns
     };
 
-    /// Creates a new, empty `Solver` instance.
+    /// Creates a new `Solver` instance, using the pre-packaged opening book.
     pub fn new() -> Solver {
         Solver {
             explored_positions: 0,
             transposition_table: TranspositionTable::new(),
-            opening_book: None
+            opening_book: OpeningBook::from_static_bytes(OPENING_BOOK_BYTES).ok()
         }
     }
 
-    /// Creates a new `Solver` instance with the pre-packaged opening book.
-    pub fn with_opening_book() -> Solver {
+    /// Creates a new `Solver` instance which is empty (without an opening book).
+    pub fn empty() -> Solver {
         Solver {
             explored_positions: 0,
             transposition_table: TranspositionTable::new(),
-            opening_book: OpeningBook::from_static_bytes(OPENING_BOOK_BYTES).ok()
+            opening_book: None
         }
     }
 
