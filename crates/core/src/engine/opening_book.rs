@@ -21,7 +21,7 @@ pub struct OpeningBook {
 impl OpeningBook {
     /// Creates a new, empty opening book.
     pub fn new() -> OpeningBook {
-        OpeningBook { map: HashMap::new() }
+        Self::default()
     }
 
     /// Creates an `OpeningBook` by deserialising from a byte slice.
@@ -51,5 +51,12 @@ impl OpeningBook {
         let reader = BufReader::new(file);
         let map = bincode::deserialize_from(reader)?;
         Ok(OpeningBook { map })
+    }
+}
+
+/// Default constructor for the `OpeningBook` struct.
+impl Default for OpeningBook {
+    fn default() -> OpeningBook {
+        OpeningBook { map: HashMap::new() }
     }
 }

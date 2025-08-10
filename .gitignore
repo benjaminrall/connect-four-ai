@@ -11,3 +11,4 @@ target/
 
 # RustRover
 .idea/
+book-*.bin

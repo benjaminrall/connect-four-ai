@@ -5,7 +5,7 @@ use std::path::Path;
 
 // This line embeds the generated book file directly into your program's binary.
 // The path is relative to the current source file (solver.rs).
-const OPENING_BOOK_BYTES: &'static [u8] = include_bytes!("books/default-book.bin");
+const OPENING_BOOK_BYTES: &[u8] = include_bytes!("books/default-book.bin");
 
 /// A strong solver for finding the exact score of a Connect Four position.
 ///
@@ -42,11 +42,7 @@ impl Solver {
 
     /// Creates a new `Solver` instance, using the pre-packaged opening book.
     pub fn new() -> Solver {
-        Solver {
-            explored_positions: 0,
-            transposition_table: TranspositionTable::new(),
-            opening_book: OpeningBook::from_static_bytes(OPENING_BOOK_BYTES).ok()
-        }
+        Self::default()
     }
 
     /// Creates a new `Solver` instance which is empty (without an opening book).
@@ -203,5 +199,16 @@ impl Solver {
         self.transposition_table.put(key, alpha, flag, depth);
 
         alpha
+    }
+}
+
+/// Default constructor for the `Solver` struct.
+impl Default for Solver {
+    fn default() -> Solver {
+        Solver {
+            explored_positions: 0,
+            transposition_table: TranspositionTable::new(),
+            opening_book: OpeningBook::from_static_bytes(OPENING_BOOK_BYTES).ok()
+        }
     }
 }

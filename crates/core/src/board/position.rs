@@ -57,11 +57,7 @@ impl Position {
 
     /// Creates a new `Position` instance for the initial state of the game.
     pub fn new() -> Position {
-        Position {
-            position: 0,
-            mask: 0,
-            moves: 0,
-        }
+        Self::default()
     }
 
     /// Parses a `Position` from a string representation of the Connect Four board.
@@ -346,28 +342,28 @@ impl Position {
         let mut r = (position << 1) & (position << 2) & (position << 3);
 
         // Horizontal alignment
-        let mut p = (position << (Self::HEIGHT + 1)) & (position << 2 * (Self::HEIGHT + 1));
-        r |= p & (position << 3 * (Self::HEIGHT + 1));
+        let mut p = (position << (Self::HEIGHT + 1)) & (position << (2 * (Self::HEIGHT + 1)));
+        r |= p & (position << (3 * (Self::HEIGHT + 1)));
         r |= p & (position >> (Self::HEIGHT + 1));
         p >>= 3 * (Self::HEIGHT + 1);
         r |= p & (position << (Self::HEIGHT + 1));
-        r |= p & (position >> 3 * (Self::HEIGHT + 1));
+        r |= p & (position >> (3 * (Self::HEIGHT + 1)));
 
         // Diagonal alignment 1
-        let mut p = (position << Self::HEIGHT) & (position << 2 * Self::HEIGHT);
-        r |= p & (position << 3 * Self::HEIGHT);
+        let mut p = (position << Self::HEIGHT) & (position << (2 * Self::HEIGHT));
+        r |= p & (position << (3 * Self::HEIGHT));
         r |= p & (position >> Self::HEIGHT);
         p >>= 3 * Self::HEIGHT;
         r |= p & (position << Self::HEIGHT);
-        r |= p & (position >> 3 * Self::HEIGHT);
+        r |= p & (position >> (3 * Self::HEIGHT));
 
         // Diagonal alignment 2
-        let mut p = (position << (Self::HEIGHT + 2)) & (position << 2 * (Self::HEIGHT + 2));
-        r |= p & (position << 3 * (Self::HEIGHT + 2));
+        let mut p = (position << (Self::HEIGHT + 2)) & (position << (2 * (Self::HEIGHT + 2)));
+        r |= p & (position << (3 * (Self::HEIGHT + 2)));
         r |= p & (position >> (Self::HEIGHT + 2));
         p >>= 3 * (Self::HEIGHT + 2);
         r |= p & (position << (Self::HEIGHT + 2));
-        r |= p & (position >> 3 * (Self::HEIGHT + 2));
+        r |= p & (position >> (3 * (Self::HEIGHT + 2)));
 
         r & (Self::BOARD_MASK ^ mask)
     }
@@ -378,7 +374,7 @@ impl Position {
     /// # Arguments
     ///
     /// * `move_bit`: A possible move, given as a bitmask with a single one in the position of the
-    /// new piece.
+    ///   new piece.
     ///
     /// # Returns
     ///
@@ -450,5 +446,16 @@ impl Position {
     #[inline(always)]
     pub const fn column_mask(col: usize) -> u64 {
         ((1 << Self::HEIGHT) - 1) << (col * (Self::HEIGHT + 1))
+    }
+}
+
+/// Default constructor for the `Position` struct.
+impl Default for Position {
+    fn default() -> Position {
+        Position {
+            position: 0,
+            mask: 0,
+            moves: 0,
+        }
     }
 }

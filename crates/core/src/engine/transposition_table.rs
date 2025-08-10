@@ -44,10 +44,7 @@ impl TranspositionTable {
 
     /// Creates a new empty transposition table, allocating space for all entries.
     pub fn new() -> TranspositionTable {
-        TranspositionTable {
-            entries: vec![TTEntry::default(); Self::MAX_SIZE],
-            age: 0,
-        }
+        Self::default()
     }
 
     /// Calculates the table index for a given position's key.
@@ -81,6 +78,16 @@ impl TranspositionTable {
             Some(entry)
         } else {
             None
+        }
+    }
+}
+
+/// Default constructor for the `TranspositionTable` struct.
+impl Default for TranspositionTable {
+    fn default() -> TranspositionTable {
+        TranspositionTable {
+            entries: vec![TTEntry::default(); Self::MAX_SIZE],
+            age: 0,
         }
     }
 }

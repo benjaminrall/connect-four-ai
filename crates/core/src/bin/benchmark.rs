@@ -6,9 +6,9 @@
 //! each line represents a single test case. Each line must contain two values separated by
 //! a space:
 //! 1. Move Sequence: A string of digits (1-7) representing the sequence of moves from the
-//! start of the game to reach the desired position.
+//!    start of the game to reach the desired position.
 //! 2. Expected score: The known best score for that position from the current player's
-//! perspective.
+//!    perspective.
 
 use connect_four_ai::{Position, Solver};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -84,15 +84,15 @@ impl Display for BenchmarkResults {
             let mean_nodes = self.total_positions_explored as f64 / self.total_tests as f64;
             let k_pos_per_sec = self.total_positions_explored as f64 / self.total_duration.as_secs_f64() / 1000.0;
 
-            writeln!(f, "Mean time per position: {:?}", mean_time)?;
-            writeln!(f, "Mean nodes explored: {:.0}", mean_nodes)?;
-            writeln!(f, "Solver speed: {:.2} kpos/s", k_pos_per_sec)?;
+            writeln!(f, "Mean time per position: {mean_time:?}")?;
+            writeln!(f, "Mean nodes explored: {mean_nodes:.0}")?;
+            writeln!(f, "Solver speed: {k_pos_per_sec:.2} kpos/s")?;
         }
 
         if !self.failures.is_empty() {
             writeln!(f, "\n--- Failures ---")?;
             for (moves, expected, actual) in &self.failures {
-                writeln!(f, "Moves: '{}' | Expected: {}, Got: {}", moves, expected, actual)?;
+                writeln!(f, "Moves: '{moves}' | Expected: {expected}, Got: {actual}")?;
             }
         }
 
@@ -112,14 +112,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    println!("Loading test data from '{}'...", path);
+    println!("Loading test data from '{path}'...");
     let test_cases = load_test_data(&path)?;
 
     println!("Running benchmark on {} positions...", test_cases.len());
     let results = run_benchmark(&test_cases)?;
 
     // Prints the final, formatted benchmark report
-    println!("{}", results);
+    println!("{results}");
 
     Ok(())
 }

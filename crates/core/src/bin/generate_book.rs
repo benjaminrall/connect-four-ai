@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map_or("book.bin", |s| s));
 
     // Generates and saves the book
-    println!("Generating opening book to depth {}...", depth);
+    println!("Generating opening book to depth {depth}...");
     let book = OpeningBookGenerator::generate(depth);
     println!("Saving book with {} positions to {:?}...", book.map.len(), path);
     book.save(path).expect("Failed to save opening book.");

@@ -18,10 +18,7 @@ pub struct MoveSorter {
 impl MoveSorter {
     /// Creates a new, empty `MoveSorter`.
     pub fn new() -> MoveSorter {
-        MoveSorter {
-            size: 0,
-            entries: [MoveEntry::default(); Position::WIDTH],
-        }
+        Self::default()
     }
 
     /// Adds a move to the sorter and inserts it at the correct position.
@@ -49,6 +46,16 @@ impl Iterator for MoveSorter {
         } else {
             self.size -= 1;
             Some(self.entries[self.size].column)
+        }
+    }
+}
+
+/// Default constructor for the `MoveSorter` struct.
+impl Default for MoveSorter {
+    fn default() -> MoveSorter {
+        MoveSorter {
+            size: 0,
+            entries: [MoveEntry::default(); Position::WIDTH],
         }
     }
 }
