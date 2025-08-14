@@ -96,6 +96,11 @@ impl Solver {
             return score;
         }
 
+        // Checks if the player can win in one move, as negamax does not support this case
+        if position.can_win_next() {
+            return (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2
+        }
+
         // Initial search window is the widest possible score range
         let mut min = -((Position::BOARD_SIZE - position.get_moves()) as i8) / 2;
         let mut max = (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2;
@@ -139,42 +144,31 @@ impl Solver {
             return scores;
         }
 
-        // Gets a bitmask of all possible moves in the position
-        let moves = position.possible();
-
-        // Loops through all playable columns, calculating and storing their scores
+        // Loops through all columns, calculating and storing their scores if they're playable
         for &column in Self::COLUMNS.iter() {
-            if moves & Position::column_mask(column) == 0 {
+            if !position.is_playable(column) {
                 continue;
             }
 
             if position.is_winning_move(column) {
                 scores[column] = Some((Position::BOARD_SIZE - position.get_moves() + 1) as i8 / 2);
-                continue;
+            } else {
+                let mut new_position = *position;
+                new_position.play(column);
+                scores[column] = Some(-self.solve(&new_position));
             }
-
-            let mut new_position = *position;
-            new_position.play(column);
-            scores[column] = Some(-self.solve(&new_position));
         }
 
         scores
     }
 
     /// The core negamax search function with alpha-beta pruning.
-    pub fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
+    fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
         self.explored_positions += 1;
 
         // Checks for a drawn game
         if depth == 0 {
             return 0;
-        }
-
-        // Checks if the current player can win the game
-        for i in 0..Position::WIDTH {
-            if position.is_playable(i) && position.is_winning_move(i) {
-                return (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2
-            }
         }
 
         // Transposition table look-up
@@ -190,7 +184,6 @@ impl Solver {
                 }
             }
         }
-
 
         // Move generation and pruning
         let possible_moves = position.possible_non_losing_moves();

@@ -272,6 +272,11 @@ impl Position {
         self.winning_positions() & self.possible() & Self::column_mask(col) > 0
     }
 
+    /// Indicates whether the current player can win with their next move.
+    pub fn can_win_next(&self) -> bool {
+        self.winning_positions() & self.possible() > 0
+    }
+
     /// Plays a move in the given column.
     ///
     /// # Arguments

@@ -2,11 +2,12 @@
 
 use connect_four_ai::{AIPlayer, Difficulty, Position};
 use std::collections::HashMap;
+use std::error::Error;
 
 const SIMULATION_COUNT: u32 = 10000;
-const START_POS_MOVES: &str = "";
+const START_POS_MOVES: &str = "33445";
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     println!(
         "Running {} simulations for position: '{}'...",
         SIMULATION_COUNT,
