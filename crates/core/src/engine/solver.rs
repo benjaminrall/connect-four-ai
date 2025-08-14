@@ -3,11 +3,11 @@
 use crate::{MoveSorter, OpeningBook, Position, TTFlag, TranspositionTable};
 use std::path::Path;
 
-// This line embeds the generated book file directly into your program's binary.
-// The path is relative to the current source file (solver.rs).
+// This line embeds a book file directly into the program's binary
+// The path is relative to the current source file (solver.rs)
 const OPENING_BOOK_BYTES: &[u8] = include_bytes!("books/default-book.bin");
 
-/// A strong solver for finding the exact score of a Connect Four position.
+/// A strong solver for finding the exact score of Connect Four positions.
 ///
 /// This struct implements a high-performance negamax search algorithm with several
 /// optimisations, including:
@@ -17,10 +17,10 @@ const OPENING_BOOK_BYTES: &[u8] = include_bytes!("books/default-book.bin");
 /// - A binary search on the score for faster convergence
 #[derive(Debug)]
 pub struct Solver {
-    /// A counter for the number of nodes explored in the last search
+    /// A counter for the number of nodes explored since the last reset.
     pub explored_positions: usize,
 
-    /// The transposition table used for caching search results
+    /// The transposition table used for caching search results.
     pub transposition_table: TranspositionTable,
 
     /// The opening book for instant lookups of early-game positions.
@@ -54,9 +54,10 @@ impl Solver {
         }
     }
 
-    /// Attempts to load an opening book to be used by the solver.
+    /// Attempts to load an opening book from the given path.
+    ///
     /// Returns whether the opening book was successfully loaded.
-    pub fn load_opening_book(&mut self, path: &Path) -> bool{
+    pub fn load_opening_book(&mut self, path: &Path) -> bool {
         self.opening_book = OpeningBook::load(path).ok();
         self.opening_book.is_some()
     }
@@ -73,6 +74,8 @@ impl Solver {
     /// negamax search with a null window to test if the score is above a certain value. This
     /// allows faster convergence to the true score.
     ///
+    /// Assumes that the given position is valid and not won by either player.
+    ///
     /// # Arguments
     ///
     /// * `position`: The board position to solve.
@@ -86,12 +89,11 @@ impl Solver {
     /// - A negative score if the current player will lose. -1 if the opponent wins with their last
     ///   move, -2 if the opponent wins with their second to last move, ...
     pub fn solve(&mut self, position: &Position) -> i8 {
+        self.explored_positions = 0;
+
         // Before starting the search, checks if the answer is in the opening book
-        if let Some(book) = &self.opening_book {
-            if let Some(score) = book.get(position) {
-                // println!("{:?} {} {}", position, position.get_key(), position.get_mirrored_key());
-                return score;
-            }
+        if let Some(score) = self.opening_book.as_ref().and_then(|book| book.get(position)) {
+            return score;
         }
 
         // Initial search window is the widest possible score range
@@ -117,16 +119,62 @@ impl Solver {
                 min = score
             }
         }
+
         min
     }
 
+    /// Calculates the scores for all possible next moves in the given position.
+    ///
+    /// Returns a fixed-size array where each index corresponds to a column.
+    /// - `Some(score)`: The score if a move in that column is possible.
+    /// - `None`: If the column is full and the move is impossible.
+    ///
+    /// This array can be used to directly calculate the optimal move to play in a position.
+    pub fn get_all_move_scores(&mut self, position: &Position) -> [Option<i8>; Position::WIDTH] {
+        let mut scores = [None; Position::WIDTH];
+        let depth = (Position::BOARD_SIZE - position.get_moves()) as u8;
+
+        // If the game is won or the position is full, no moves are possible
+        if position.is_won_position() || depth == 0 {
+            return scores;
+        }
+
+        // Gets a bitmask of all possible moves in the position
+        let moves = position.possible();
+
+        // Loops through all playable columns, calculating and storing their scores
+        for &column in Self::COLUMNS.iter() {
+            if moves & Position::column_mask(column) == 0 {
+                continue;
+            }
+
+            if position.is_winning_move(column) {
+                scores[column] = Some((Position::BOARD_SIZE - position.get_moves() + 1) as i8 / 2);
+                continue;
+            }
+
+            let mut new_position = *position;
+            new_position.play(column);
+            scores[column] = Some(-self.solve(&new_position));
+        }
+
+        scores
+    }
+
     /// The core negamax search function with alpha-beta pruning.
-    fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
+    pub fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
         self.explored_positions += 1;
 
         // Checks for a drawn game
         if depth == 0 {
             return 0;
+        }
+
+        // Checks if the current player can win the game
+        for i in 0..Position::WIDTH {
+            if position.is_playable(i) && position.is_winning_move(i) {
+                return (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2
+            }
         }
 
         // Transposition table look-up
@@ -143,6 +191,7 @@ impl Solver {
             }
         }
 
+
         // Move generation and pruning
         let possible_moves = position.possible_non_losing_moves();
         if possible_moves == 0 {
@@ -153,7 +202,7 @@ impl Solver {
         // Tightens the lower bound as the opponent cannot win next move
         let min = -((Position::BOARD_SIZE - position.get_moves()) as i8 - 2) / 2;
         if alpha < min {
-            if min >= beta { return min}
+            if min >= beta { return min }
             alpha = min;
         }
 

@@ -15,6 +15,8 @@ pub use engine::{
     MoveEntry,
     MoveSorter,
     OpeningBook,
-    OpeningBookGenerator
+    OpeningBookGenerator,
+    Difficulty,
+    AIPlayer
 };
 pub use board::{Position, PositionParsingError};

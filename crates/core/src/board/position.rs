@@ -383,24 +383,27 @@ impl Position {
         Self::compute_winning_positions(self.position | move_bit, self.mask).count_ones() as u8
     }
 
-    /// Indicates whether the position has been won.
-    ///
-    /// Returns true if a 4-alignment exists in the position, false otherwise.
+    /// Indicates whether the current position has been won by either player.
     pub fn is_won_position(&self) -> bool {
+        Self::compute_won_position(self.position) || Self::compute_won_position(self.position ^ self.mask)
+    }
+
+    /// Computes whether the given position contains a 4-alignment.
+    pub fn compute_won_position(position: u64) -> bool {
         // Horizontal alignment
-        let m = self.position & (self.position >> (Self::HEIGHT+1));
+        let m = position & (position >> (Self::HEIGHT+1));
         if m & (m >> (2*(Self::HEIGHT+1))) > 0 { return true; }
 
         // Diagonal alignment 1
-        let m = self.position & (self.position >> Self::HEIGHT);
+        let m = position & (position >> Self::HEIGHT);
         if m & (m >> (2*Self::HEIGHT)) > 0 { return true; }
 
         // Diagonal alignment 2
-        let m = self.position & (self.position >> (Self::HEIGHT+2));
+        let m = position & (position >> (Self::HEIGHT+2));
         if m & (m >> (2*(Self::HEIGHT+2))) > 0 { return true; }
 
         // Vertical alignment
-        let m = self.position & (self.position >> 1);
+        let m = position & (position >> 1);
         if m & (m >> 2) > 0 { return true; }
 
         false
