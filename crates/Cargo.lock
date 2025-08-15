@@ -38,17 +38,6 @@ checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
 [[package]]
 name = "connect-four-ai"
 version = "0.1.0"
-dependencies = [
- "bincode",
- "indicatif",
- "rand",
- "rayon",
- "serde",
-]
-
-[[package]]
-name = "connect-four-ai"
-version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b722c77e86c6c7343b25728650e53b55648800710dcf599d0990b40fde38f6c"
 dependencies = [
@@ -59,10 +48,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "connect-four-ai"
+version = "0.1.1"
+dependencies = [
+ "bincode",
+ "indicatif",
+ "rand",
+ "rayon",
+ "serde",
+]
+
+[[package]]
 name = "connect-four-ai-python"
 version = "0.1.0"
 dependencies = [
- "connect-four-ai 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "connect-four-ai 0.1.0",
  "pyo3",
 ]
 

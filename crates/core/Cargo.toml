@@ -1,6 +1,6 @@
 [package]
 name = "connect-four-ai"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A high-performance Rust library for a perfect Connect Four AI solver."
 license = "MIT"
