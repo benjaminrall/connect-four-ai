@@ -1,17 +1,25 @@
 //! A script to analyse and tune the AI player's difficulty settings.
+//!
+//! The script must be run with a position's move sequence string specified as the first
+//! command-line argument - if not specified, an empty position will be used.
 
 use connect_four_ai::{AIPlayer, Difficulty, Position};
 use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 
 const SIMULATION_COUNT: u32 = 10000;
-const START_POS_MOVES: &str = "4134434";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Collects and parses command-line arguments
+    let args: Vec<String> = env::args().collect();
+    let pos_moves = args.get(1)
+        .map_or("", |s| s);
+
     println!(
         "Running {} simulations for position: '{}'...",
         SIMULATION_COUNT,
-        if START_POS_MOVES.is_empty() { "Empty Board" } else { START_POS_MOVES }
+        if pos_moves.is_empty() { "Empty Position" } else { pos_moves }
     );
 
     let difficulties = [
@@ -20,11 +28,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Difficulty::Hard,
         Difficulty::Impossible,
     ];
-    let mut players: Vec<_> = difficulties.iter().map(|&d| {
-        let mut player = AIPlayer::new(d);
-        player
-    }).collect();
-    let position = Position::from_moves(START_POS_MOVES)?;
+    let mut players: Vec<_> = difficulties.iter().map(|&d| AIPlayer::new(d)).collect();
+    let position = Position::from_moves(pos_moves)?;
 
     // Determines the move scores for the position, and calculates the optimal score from them
     let move_scores = players.last_mut().unwrap().get_all_move_scores(&position);
@@ -33,9 +38,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .filter_map(|&s| s)
         .max()
         .unwrap_or(0);
-
-    println!("Move scores: {:?}", move_scores);
-    println!("Optimal score: {}", optimal_score);
 
     // Sets up lists to hold the results
     let mut choice_counts: Vec<HashMap<usize, u32>> = vec![HashMap::new(); players.len()];
@@ -73,11 +75,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     println!("\n--- Simulation Results ---");
-    println!("Optimal score for this position: {}", optimal_score);
+    println!("Move scores for this position: {move_scores:?}");
+    println!("Optimal score for this position: {optimal_score}");
 
     // Displays the results for each difficulty
     for (i, &difficulty) in difficulties.iter().enumerate() {
-        println!("\n--- Difficulty: {:?} ---", difficulty);
+        println!("\n--- Difficulty: {difficulty:?} ---");
         println!("Move Distribution:");
 
         let mut sorted_choices: Vec<_> = choice_counts[i].iter().collect();
@@ -85,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         for (col, count) in sorted_choices {
             let percentage = (*count as f64 / SIMULATION_COUNT as f64) * 100.0;
-            println!("  Col {}: {:>5} times ({:>5.2}%)", col, count, percentage);
+            println!("  Col {col}: {count:>5} times ({percentage:>5.2}%)");
         }
 
         let optimal_percentage = (optimal_counts[i] as f64 / SIMULATION_COUNT as f64) * 100.0;
