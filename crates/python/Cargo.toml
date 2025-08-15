@@ -2,5 +2,16 @@
 name = "connect-four-ai-python"
 version = "0.1.0"
 edition = "2021"
+description = "Python bindings for a high-performance perfect Connect Four AI solver written in Rust."
+license = "MIT"
+repository = "https://github.com/benjaminrall/connect-four-ai"
+homepage = "https://github.com/benjaminrall/connect-four-ai"
+readme = "README.md"
+
+[lib]
+name = "connect_four_ai"
+crate-type = ["cdylib"]
 
 [dependencies]
+pyo3 = "0.25.1"
+connect-four-ai = "0.1.0"

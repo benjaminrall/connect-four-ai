@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 // Each thread gets its own static Solver instance for efficient parallelisation.
 thread_local! {
-    static THREAD_SOLVER: RefCell<Solver> = RefCell::new(Solver::new());
+    static THREAD_SOLVER: RefCell<Solver> = RefCell::new(Solver::empty());
 }
 
 /// A utility struct for generating a new `OpeningBook`.

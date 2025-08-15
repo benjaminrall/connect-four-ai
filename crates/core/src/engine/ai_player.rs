@@ -1,3 +1,10 @@
+//! Provides the logic for an AI player which utilises a solver to select which move to play
+//! in a given Connect Four position.
+//!
+//! The AI's skill is determined by the `Difficulty` enum, which controls the temperature of
+//! a softmax distribution over the scores of each move in the position. This allows for a range
+//! of behaviours, from a more random 'Easy' player to a perfect, greedy 'Impossible' player.
+
 use std::cmp::Ordering;
 use std::path::Path;
 use rand::distr::weighted::WeightedIndex;
@@ -104,7 +111,7 @@ impl AIPlayer {
         // Otherwise, samples from the scores using a softmax distribution
         let weights: Vec<f64> = possible_moves
             .iter()
-            .map(|(_, score)| (*score as f64 / temperature).exp())
+            .map(|(_, score)| (*score / temperature).exp())
             .collect();
 
         let dist = match WeightedIndex::new(&weights) {

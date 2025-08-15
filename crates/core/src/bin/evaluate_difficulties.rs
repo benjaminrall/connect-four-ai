@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 const SIMULATION_COUNT: u32 = 10000;
-const START_POS_MOVES: &str = "33445";
+const START_POS_MOVES: &str = "4134434";
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!(
