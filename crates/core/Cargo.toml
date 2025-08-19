@@ -2,7 +2,8 @@
 name = "connect-four-ai"
 version = "0.1.1"
 edition = "2021"
-description = "A high-performance Rust library for a perfect Connect Four AI solver."
+description = "A high-performance Rust implementation of a perfect Connect Four solver."
+authors = ["Benjamin Rall <benr2508@aol.com>"]
 license = "MIT"
 repository = "https://github.com/benjaminrall/connect-four-ai"
 homepage = "https://github.com/benjaminrall/connect-four-ai"

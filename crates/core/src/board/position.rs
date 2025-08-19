@@ -26,9 +26,9 @@ use crate::PositionParsingError;
 #[derive(Debug, Copy, Clone)]
 pub struct Position {
     /// A mask of the current player's tiles.
-    position: u64,
+    pub position: u64,
     /// A mask of all occupied tiles.
-    mask: u64,
+    pub mask: u64,
     /// The number of moves taken to reach the position.
     moves: usize,
 }
@@ -46,7 +46,7 @@ impl Position {
         let mut mask = 0;
         let mut i = 0;
         while i < Self::WIDTH {
-            mask |= Position::bottom_mask_col(i);
+            mask |= Self::bottom_mask_col(i);
             i += 1;
         }
         mask
@@ -173,7 +173,7 @@ impl Position {
     ///  assert_eq!(pos.get_moves(), 12)
     /// ```
     pub fn from_moves(move_sequence: &str) -> Result<Position, PositionParsingError> {
-        let mut pos = Position::new();
+        let mut pos = Self::new();
 
         // Applies the move sequence to the position in order
         for (i, c) in move_sequence.chars().enumerate() {
@@ -204,9 +204,9 @@ impl Position {
         self.moves
     }
 
-    /// Returns a unique key for the current position.
+    /// Returns the unique key for the current position.
     ///
-    /// This key is unique to each pair of horizontally symmetrical positions, as such
+    /// This key is unique to each pair of horizontally symmetrical positions, as these
     /// positions will always have the same solution.
     #[inline(always)]
     pub fn get_key(&self) -> u64 {
@@ -394,7 +394,7 @@ impl Position {
     }
 
     /// Computes whether the given position contains a 4-alignment.
-    pub fn compute_won_position(position: u64) -> bool {
+    fn compute_won_position(position: u64) -> bool {
         // Horizontal alignment
         let m = position & (position >> (Self::HEIGHT+1));
         if m & (m >> (2*(Self::HEIGHT+1))) > 0 { return true; }
@@ -424,7 +424,7 @@ impl Position {
     ///
     /// A bitmask with a singular one in the top of cell the column.
     #[inline(always)]
-    pub const fn top_mask_col(col: usize) -> u64 {
+    const fn top_mask_col(col: usize) -> u64 {
         1 << (Self::HEIGHT - 1 + col * (Self::HEIGHT + 1))
     }
 
@@ -438,7 +438,7 @@ impl Position {
     ///
     /// A bitmask with a single one in the bottom cell of the column.
     #[inline(always)]
-    pub const fn bottom_mask_col(col: usize) -> u64 {
+    const fn bottom_mask_col(col: usize) -> u64 {
         1 << (col * (Self::HEIGHT + 1))
     }
 

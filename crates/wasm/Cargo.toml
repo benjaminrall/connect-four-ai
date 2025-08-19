@@ -1,6 +1,20 @@
 [package]
 name = "connect-four-ai-wasm"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
+description = "WebAssembly bindings for a high-performance implementation of a perfect Connect Four solver."
+authors = ["Benjamin Rall <benr2508@aol.com>"]
+license = "MIT"
+repository = "https://github.com/benjaminrall/connect-four-ai"
+homepage = "https://github.com/benjaminrall/connect-four-ai"
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+wasm-bindgen = "0.2.100"
+console_error_panic_hook = "0.1.7"
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
+connect-four-ai = { path = "../core" }
+

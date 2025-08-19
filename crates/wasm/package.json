@@ -1,0 +1,35 @@
+{
+  "name": "connect-four-ai",
+  "version": "0.1.2",
+  "description": "A high performance implementation of a perfect Connect Four solver, written in Rust.",
+  "main": "pkg/connect_four_ai_wasm.js",
+  "types": "pkg/connect_four_ai_wasm.d.ts",
+  "files": [
+    "pkg/connect_four_ai_wasm_bg.wasm",
+    "pkg/connect_four_ai_wasm.js",
+    "pkg/connect_four_ai_wasm_bg.js",
+    "pkg/connect_four_ai_wasm.d.ts"
+  ],
+  "license": "MIT",
+  "readme": "README.md",
+  "homepage": "https://github.com/benjaminrall/connect-four-ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benjaminrall/connect-four-ai"
+  },
+  "author": {
+    "name": "Benjamin Rall",
+    "email": "benr2508@aol.com"
+  },
+  "devDependencies": {
+    "@wasm-tool/wasm-pack-plugin": "^1.7.0",
+    "html-webpack-plugin": "^5.6.4",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "scripts": {
+    "build": "wasm-pack build --target web",
+    "serve": "webpack serve"
+  }
+}

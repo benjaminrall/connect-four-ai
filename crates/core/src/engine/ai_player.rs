@@ -37,6 +37,7 @@ impl Difficulty {
 ///
 /// The player's skill level can be configured using the `Difficulty` enum, which adjusts the
 /// move selection strategy.
+#[derive(Debug)]
 pub struct AIPlayer {
     solver: Solver,
     difficulty: Difficulty,
@@ -74,7 +75,7 @@ impl AIPlayer {
         self.solver.get_all_move_scores(position)
     }
 
-    /// Calculates the AI player's selected move for the given position.
+    /// Solves and selects the AI player's move for the given position.
     pub fn get_move(&mut self, position: &Position) -> Option<usize> {
         let move_scores = self.solver.get_all_move_scores(position);
         self.select_move(position, &move_scores)
@@ -127,7 +128,7 @@ impl AIPlayer {
 
     /// Normalises scores from the given position to lie in the range -1 to 1, scaled by the maximum
     /// possible score.
-    pub fn normalise_scores(position: &Position, scores: &[Option<i8>; Position::WIDTH]) -> [Option<f64>; Position::WIDTH] {
+    fn normalise_scores(position: &Position, scores: &[Option<i8>; Position::WIDTH]) -> [Option<f64>; Position::WIDTH] {
         let mut normalised_scores = [None; Position::WIDTH];
         let max_possible_score = ((Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2) as f64;
 

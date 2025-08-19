@@ -1,8 +1,7 @@
-//! A high-performance Rust library for a perfect Connect Four AI solver.
+//! A high-performance implementation of a perfect Connect Four solver.
 //!
-//! This library provides functionality to compute the optimal move for any given
-//! Connect Four board state. Since Connect Four is a solved game, this AI is capable of playing
-//! perfectly.
+//! This library provides functionality to compute the score and optimal move for any
+//! given Connect Four position.
 
 mod board;
 mod engine;

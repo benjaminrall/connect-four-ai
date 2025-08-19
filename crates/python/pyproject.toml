@@ -1,16 +1,20 @@
 [project]
 name = "connect-four-ai"
-version = "0.1.0"
-description = "A high performance library for a perfect Connect Four AI solver, written in Rust."
+version = "0.1.2"
+description = "A high performance implementation of a perfect Connect Four solver, written in Rust."
 readme = "README.md"
 authors = [
-    { name = "benjaminrall", email = "benr2508@aol.com"},
+    { name = "Benjamin Rall", email = "benr2508@aol.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.8"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
 ]
+
+[project.urls]
+Homepage = "https://github.com/benjaminrall/connect-four-ai"
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]

@@ -12,3 +12,5 @@ target/
 # RustRover
 .idea/
 book-*.bin
+
+node_modules/

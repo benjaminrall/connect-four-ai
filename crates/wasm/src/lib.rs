@@ -1,14 +1,17 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! WebAssembly bindings for a high-performance implementation of a perfect Connect Four solver.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod position;
+mod solver;
+mod ai_player;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+use wasm_bindgen::prelude::*;
+pub use position::WASMPosition;
+pub use solver::WASMSolver;
+pub use ai_player::{WASMDifficulty, WASMAIPlayer};
+
+/// Sets up a hook to log Rust panics to the browser's console when the
+/// WASM module is first loaded.
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
 }

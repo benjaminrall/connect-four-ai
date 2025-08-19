@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8" />
+    <title>WASM Example</title>
+</head>
+<body>
+<script type="module">
+    import init, { Position, AIPlayer, Difficulty } from "./pkg/connect_four_ai_wasm.js";
+
+    init().then(() => {
+        let position = Position.fromMoves("");
+        let player = new AIPlayer(Difficulty.IMPOSSIBLE);
+
+        while (!position.isWonPosition()) {
+            let moves = player.getAllMoveScores(position.clone());
+            let choice = player.selectMove(position, moves);
+
+            console.log(position.toString() + " " + moves + " " + choice);
+
+            position.play(choice)
+        }
+    });
+</script>
+</body>
+</html>

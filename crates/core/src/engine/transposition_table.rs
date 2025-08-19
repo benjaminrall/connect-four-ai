@@ -50,7 +50,7 @@ impl TranspositionTable {
     /// Calculates the table index for a given position's key.
     #[inline(always)]
     pub fn index(&self, key: u64) -> usize {
-        key as usize % Self::MAX_SIZE
+        (key % Self::MAX_SIZE as u64) as usize
     }
 
     /// Clears the table by incrementing the current age.
@@ -86,7 +86,7 @@ impl TranspositionTable {
 impl Default for TranspositionTable {
     fn default() -> TranspositionTable {
         TranspositionTable {
-            entries: vec![TTEntry::default(); Self::MAX_SIZE],
+            entries: vec![TTEntry::default(); Self::MAX_SIZE as usize],
             age: 0,
         }
     }

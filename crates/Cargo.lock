@@ -37,18 +37,6 @@ checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
 
 [[package]]
 name = "connect-four-ai"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b722c77e86c6c7343b25728650e53b55648800710dcf599d0990b40fde38f6c"
-dependencies = [
- "bincode",
- "indicatif",
- "rayon",
- "serde",
-]
-
-[[package]]
-name = "connect-four-ai"
 version = "0.1.1"
 dependencies = [
  "bincode",
@@ -60,15 +48,21 @@ dependencies = [
 
 [[package]]
 name = "connect-four-ai-python"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
- "connect-four-ai 0.1.0",
+ "connect-four-ai",
  "pyo3",
 ]
 
 [[package]]
 name = "connect-four-ai-wasm"
-version = "0.1.0"
+version = "0.1.2"
+dependencies = [
+ "connect-four-ai",
+ "console_error_panic_hook",
+ "getrandom",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "console"
@@ -81,6 +75,16 @@ dependencies = [
  "once_cell",
  "unicode-width",
  "windows-sys",
+]
+
+[[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -127,9 +131,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26145e563e54f2cadc477553f1ec5ee650b00862f0a58bcd12cbdc5f0ea2d2f4"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi",
  "wasi",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -346,6 +352,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustversion"
+version = "1.0.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+
+[[package]]
 name = "serde"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -423,6 +435,7 @@ checksum = "1edc8929d7499fc4e8f0be2262a241556cfc54a0bea223790e71446f2aab1ef5"
 dependencies = [
  "cfg-if",
  "once_cell",
+ "rustversion",
  "wasm-bindgen-macro",
 ]
 

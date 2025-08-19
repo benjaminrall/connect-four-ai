@@ -17,7 +17,7 @@ const OPENING_BOOK_BYTES: &[u8] = include_bytes!("books/default-book.bin");
 /// - A binary search on the score for faster convergence
 #[derive(Debug)]
 pub struct Solver {
-    /// A counter for the number of nodes explored since the last reset.
+    /// A counter for the number of nodes explored in the last `solve` call.
     pub explored_positions: usize,
 
     /// The transposition table used for caching search results.
@@ -30,7 +30,7 @@ pub struct Solver {
 
 impl Solver {
     /// A pre-sorted list of columns to check, starting from the centre column.
-    const COLUMNS: [usize; Position::WIDTH] = const {
+    pub const COLUMNS: [usize; Position::WIDTH] = const {
         let mut columns = [0; Position::WIDTH];
         let mut i = 0;
         while i < Position::WIDTH {
