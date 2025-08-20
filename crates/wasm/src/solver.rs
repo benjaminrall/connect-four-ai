@@ -65,7 +65,6 @@ impl WASMSolver {
     /// - A negative score if the current player will lose. -1 if the opponent wins with their last
     ///   move, -2 if the opponent wins with their second to last move, ...
     pub fn solve(&mut self, position: &WASMPosition) -> i8 {
-        let position = position.clone();
         self.0.solve(&position.0)
     }
 
@@ -78,7 +77,6 @@ impl WASMSolver {
     /// This array can be used to directly calculate the optimal move to play in a position.
     #[wasm_bindgen(js_name=getAllMoveScores)]
     pub fn get_all_move_scores(&mut self, position: &WASMPosition) -> Vec<JsValue> {
-        let position = position.clone();
         self.0.get_all_move_scores(&position.0)
             .iter()
             .map(|&x| match x {

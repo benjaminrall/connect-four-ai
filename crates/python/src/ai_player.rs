@@ -81,7 +81,9 @@ impl PyAIPlayer {
         let scores_array: [Option<i8>; Position::WIDTH] = scores
             .clone()
             .try_into()
-            .expect(&format!("Scores vector must contain exactly {} elements.", Position::WIDTH));
+            .unwrap_or_else(|_|
+                panic!("Scores vector must contain exactly {} elements.", Position::WIDTH)
+            );
 
         self.0.select_move(&position.0, &scores_array)
     }

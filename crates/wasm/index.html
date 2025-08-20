@@ -5,22 +5,26 @@
     <title>WASM Example</title>
 </head>
 <body>
-<script type="module">
-    import init, { Position, AIPlayer, Difficulty } from "./pkg/connect_four_ai_wasm.js";
+    <script type="module">
 
-    init().then(() => {
-        let position = Position.fromMoves("");
-        let player = new AIPlayer(Difficulty.IMPOSSIBLE);
+    import init, { Solver, Position } from "./pkg/connect_four_ai_wasm.js";
 
-        while (!position.isWonPosition()) {
-            let moves = player.getAllMoveScores(position.clone());
-            let choice = player.selectMove(position, moves);
+    async function run() {
+        // Initialises the WASM module
+        await init();
 
-            console.log(position.toString() + " " + moves + " " + choice);
+        // Creates a position from a sequence of 1-indexed moves
+        let position = Position.fromMoves("76461241141");
 
-            position.play(choice)
-        }
-    });
-</script>
+        // Initialises and uses the Solver to calculate the exact score of the position
+        let solver = new Solver();
+        let score = solver.solve(position);
+
+        console.log(score); // Output: -1
+    }
+
+    run();
+
+    </script>
 </body>
 </html>

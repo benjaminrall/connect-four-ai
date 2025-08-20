@@ -46,6 +46,7 @@ impl PyPosition {
     /// Parses a position from a string of 1-indexed moves.
     ///
     /// The input string should contain a sequence of columns played, indexed from 1.
+    #[staticmethod]
     fn from_moves(moves: &str) -> PyResult<PyPosition> {
         Position::from_moves(moves)
             .map(PyPosition)
@@ -59,6 +60,7 @@ impl PyPosition {
     /// characters are ignored. 'x' is treated as the current player, and 'o' as the opponent.
     /// This method assumes that a correctly formatted board string is a valid game position.
     /// Invalid game positions will lead to undefined behaviour.
+    #[staticmethod]
     fn from_board_string(board_string: &str) -> PyResult<PyPosition> {
         Position::from_board_string(board_string)
             .map(PyPosition)

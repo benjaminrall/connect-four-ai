@@ -12,13 +12,13 @@
 
 use connect_four_ai::{Position, Solver};
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{env, fmt};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
+use std::{env, fmt};
 
 /// Represents a single parsed test case from the input file.
 pub struct TestCase {

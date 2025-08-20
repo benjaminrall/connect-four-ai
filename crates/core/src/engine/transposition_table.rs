@@ -86,7 +86,7 @@ impl TranspositionTable {
 impl Default for TranspositionTable {
     fn default() -> TranspositionTable {
         TranspositionTable {
-            entries: vec![TTEntry::default(); Self::MAX_SIZE as usize],
+            entries: vec![TTEntry::default(); Self::MAX_SIZE],
             age: 0,
         }
     }

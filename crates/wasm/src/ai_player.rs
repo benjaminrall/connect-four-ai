@@ -70,7 +70,6 @@ impl WASMAIPlayer {
 
     /// Solves a position to find its exact score using the AI player's solver.
     pub fn solve(&mut self, position: &WASMPosition) -> i8 {
-        let position = position.clone();
         self.0.solve(&position.0)
     }
 
@@ -78,7 +77,6 @@ impl WASMAIPlayer {
     /// AI player's solver.
     #[wasm_bindgen(js_name=getAllMoveScores)]
     pub fn get_all_move_scores(&mut self, position: &WASMPosition) -> Vec<JsValue> {
-        let position = position.clone();
         self.0.get_all_move_scores(&position.0)
             .iter()
             .map(|&x| match x {
@@ -91,7 +89,6 @@ impl WASMAIPlayer {
     /// Solves and selects the AI player's move for the given position.
     #[wasm_bindgen(js_name=getMove)]
     pub fn get_move(&mut self, position: &WASMPosition) -> Option<usize> {
-        let position = position.clone();
         self.0.get_move(&position.0)
     }
 
@@ -102,8 +99,6 @@ impl WASMAIPlayer {
     /// Returns the column index of the selected move or `None` if no moves are possible.
     #[wasm_bindgen(js_name=selectMove)]
     pub fn select_move(&self, position: &WASMPosition, scores: Vec<JsValue>) -> Option<usize> {
-        let position = position.clone();
-
         if scores.len() != Position::WIDTH {
             panic!("Scores vector must contain exactly {} elements.", Position::WIDTH)
         }
