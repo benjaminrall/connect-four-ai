@@ -4,10 +4,10 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "connect-four-ai"
-version = "0.1.2"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/07/86e1d4572ccc8f1a1cf39fd90f417c511b21f8a88bc2274092cf9c28654f/connect_four_ai-0.1.2-cp313-cp313-win_amd64.whl", hash = "sha256:3cf24ef99e90572d457f67fd895252712450b503c08ec4053502bc4fc2b06902", size = 778666, upload-time = "2025-08-20T15:51:52.748Z" },
+    { url = "https://files.pythonhosted.org/packages/03/92/2283bd164532ecf72b429793aac8a84f451a499301928dbb690caf7c1618/connect_four_ai-1.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:71fead412672e4b83ca7bbdf76f57b0bb564dad0f5ecbd7f6a2eebba37755739", size = 991911, upload-time = "2025-08-21T14:22:37.882Z" },
 ]
 
 [[package]]
@@ -21,7 +21,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "connect-four-ai", specifier = ">=0.1.2" },
+    { name = "connect-four-ai", specifier = ">=1.0.0" },
     { name = "pygame", specifier = ">=2.6.1" },
 ]
 
