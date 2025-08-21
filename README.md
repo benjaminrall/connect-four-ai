@@ -38,9 +38,11 @@ primarily based on the techniques described in this [blog](http://blog.gamesolve
 
 This repository contains two playable demos to showcase the engine's capabilities:
 - **Web Demo**: A fully interactive demo built with WebAssembly. You can play against
-  the AI, analyse positions, and see the solver in action. 
+  the AI, analyse positions, and see the solver in action.
+  - [View Live Demo](https://benjaminrall.github.io/connect-four-ai)
   - [View Source (`./web-demo`)](./web-demo)
 - **Python Demo**: A simple Connect Four implementation built with Pygame.
+  - [View on PyPI](https://pypi.org/project/connect-four-ai-demo/)
   - [View Source (`./python-demo`)](./python-demo)
 
 ## Key Features
@@ -71,14 +73,14 @@ This engine is designed for high performance, capable of quickly solving
 any Connect Four position strongly. Its speed was benchmarked against John Tromp's
 [Fhourstones](https://en.wikipedia.org/wiki/Fhourstones) solver. A key difference
 is that the Fhourstones benchmark is a weak solver, meaning it only determines
-the win/loss/draw outcome, rather than the exact score. Despite this, it should
-still provide a valuable baseline for comparing speed.
+the win/loss/draw outcome, rather than the exact score. Despite this, it
+still provides a valuable baseline for comparing speed.
 
 ### Test Methodology
 
 All benchmarks were run on the same machine using test data from this
 [blog](http://blog.gamesolver.org/solving-connect-four/02-test-protocol/).
-There are a total of 6000 positions, divided six datasets
+There are a total of 6000 positions, divided into six datasets
 of 1000 test cases each. 
 Each dataset tests a different phase of the game, categorised by the number
 of moves played (`n`) and the moves remaining until a forced conclusion (`r`).
@@ -148,7 +150,7 @@ cargo add connect-four-ai
 or by adding the following line to your Cargo.toml:
 
 ```shell
-connect-four-ai = "0.1.2"
+connect-four-ai = "1.0.0"
 ```
 
 #### Example
