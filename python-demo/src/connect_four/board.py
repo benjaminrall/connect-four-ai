@@ -28,7 +28,6 @@ class Board:
         # Calculates values used for drawing the board
         self.surface_size = surface_size
         self.padding = surface_size // 40
-        
         self.cell_size = (surface_size - 2 * self.padding) // 10
         self.board_width = Board.COLS * self.cell_size + self.padding * 2
         self.board_height = Board.ROWS * self.cell_size + self.padding * 2

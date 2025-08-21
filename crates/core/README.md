@@ -48,7 +48,7 @@ cargo add connect-four-ai
 or by adding the following line to your Cargo.toml:
 
 ```shell
-connect-four-ai = "0.1.3"
+connect-four-ai = "1.0.0"
 ```
 
 ### Example Usage

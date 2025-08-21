@@ -1,15 +1,23 @@
 [project]
-name = "connect-four"
+name = "connect-four-ai-demo"
 version = "0.1.0"
-description = "A Pygame implementation of Connect Four against an AI opponent."
+description = "A Pygame implementation of Connect Four against an AI opponent, using the `connect-four-ai` library."
 readme = "README.md"
 authors = [
     { name = "Benjamin Rall", email = "benr2508@aol.com" }
 ]
 requires-python = ">=3.13"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
 dependencies = [
+    "connect-four-ai>=0.1.2",
     "pygame>=2.6.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/benjaminrall/connect-four-ai"
 
 [project.scripts]
 connect-four = "connect_four.main:main"

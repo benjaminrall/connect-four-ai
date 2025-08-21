@@ -1,6 +1,6 @@
 [package]
 name = "connect-four-ai-python"
-version = "0.1.3"
+version = "1.0.0"
 edition = "2021"
 description = "Python bindings for a high-performance implementation of a perfect Connect Four solver."
 authors = ["Benjamin Rall <benr2508@aol.com>"]
