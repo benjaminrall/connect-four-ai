@@ -419,7 +419,8 @@ game positions without requiring users to load any external files.
 
 For advanced use, the repository also includes a tool for generating new opening books. It performs
 an exhaustive, parallelised breadth-first search of the game tree up to a given depth, using the
-solver to evaluate each position.
+solver to evaluate each position. Additional opening books up to depth 12 can be found attached to 
+the [v1.0.0 release](https://github.com/benjaminrall/connect-four-ai/releases/tag/v1.0.0/).
 
 ## License
 
