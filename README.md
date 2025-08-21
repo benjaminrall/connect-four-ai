@@ -8,6 +8,8 @@
 
 A high-performance, perfect Connect Four solver written in Rust, with bindings for Python and WebAssembly.
 
+![Connect Four GIF](https://github.com/user-attachments/assets/bb7dff1f-3a27-4f0a-b6ab-b46f19df6fd6)
+
 This repository contains a library which can strongly solve any Connect Four position,
 which allows it to also determine optimal moves.
 The core engine is implemented in Rust, using a highly optimised search algorithm
