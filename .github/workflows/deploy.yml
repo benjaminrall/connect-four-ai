@@ -6,9 +6,9 @@ on:
       - main
 
 permissions:
-  contents: write # This line grants write access to the repository
-  pages: write # This line grants permission to deploy to GitHub Pages
-  id-token: write # This line is necessary for the OIDC token
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   deploy:
@@ -16,6 +16,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24' # Or your project's required Node.js version
+
+      - name: Install dependencies
+        run: npm i
+        working-directory: ./web-demo # This is crucial to run the command in the correct directory
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
