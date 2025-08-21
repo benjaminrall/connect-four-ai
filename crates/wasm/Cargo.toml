@@ -2,7 +2,7 @@
 name = "connect-four-ai-wasm"
 version = "0.1.3"
 edition = "2021"
-description = "WebAssembly bindings for a high-performance implementation of a perfect Connect Four solver."
+description = "A high performance implementation of a perfect Connect Four solver, written in Rust."
 authors = ["Benjamin Rall <benr2508@aol.com>"]
 license = "MIT"
 repository = "https://github.com/benjaminrall/connect-four-ai"

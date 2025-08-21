@@ -12,7 +12,7 @@ A high-performance, perfect Connect Four solver written in Rust, with bindings f
 
 This library can strongly solve any Connect Four position and determine the optimal move.
 For full details, performance benchmarks, and demos, please see the main
-[GitHub Repository](https://github.com/benjaminrall/connect-four-ai)
+[GitHub Repository](https://github.com/benjaminrall/connect-four-ai).
 
 ## Key Features
 
