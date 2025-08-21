@@ -2,11 +2,13 @@
 
 [![Crates.io Version](https://img.shields.io/crates/v/connect-four-ai)](https://crates.io/crates/connect-four-ai)
 [![PyPI Version](https://img.shields.io/pypi/v/connect-four-ai)](https://pypi.org/project/connect-four-ai)
-[![NPM Version](https://img.shields.io/npm/v/connect-four-ai)](https://www.npmjs.com/package/connect-four-ai)
+[![NPM Version](https://img.shields.io/npm/v/connect-four-ai-wasm)](https://www.npmjs.com/package/connect-four-ai-wasm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/benjaminrall/connect-four-ai/blob/main/LICENSE)
 [![docs.rs](https://img.shields.io/docsrs/connect-four-ai)](https://docs.rs/connect-four-ai)
 
 A high-performance, perfect Connect Four solver written in Rust, with bindings for Python and WebAssembly.
+
+![Connect Four GIF](https://github.com/user-attachments/assets/bb7dff1f-3a27-4f0a-b6ab-b46f19df6fd6)
 
 This library can strongly solve any Connect Four position and determine the optimal move.
 For full details, performance benchmarks, and demos, please see the main 
@@ -46,7 +48,7 @@ cargo add connect-four-ai
 or by adding the following line to your Cargo.toml:
 
 ```shell
-connect-four-ai = "0.1.2"
+connect-four-ai = "0.1.3"
 ```
 
 ### Example Usage
