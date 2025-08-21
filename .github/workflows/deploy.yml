@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write # This line grants write access to the repository
+  pages: write # This line grants permission to deploy to GitHub Pages
+  id-token: write # This line is necessary for the OIDC token
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
