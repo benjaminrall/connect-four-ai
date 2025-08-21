@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            /* Apply the gradient background from the start for a smooth transition */
+            background-color: #1F2937; /* bg-gray-800 */
+            background-image: linear-gradient(to bottom, #1F2937, #111827);
+        }
+        /* Simple pulsing animation for loading dots */
+        .dot {
+            animation: pulse 1.4s infinite;
+        }
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes pulse {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1.0);
+            }
+        }
+        /* Ensure the game board scales nicely */
+        #game-board-container {
+            width: 100%;
+            max-width: 640px;
+            cursor: pointer;
+        }
+        /* Styles for the game pieces */
+        .game-piece {
+            position: absolute;
+            border-radius: 50%;
+            /* Use transform for robust centering */
+            transform: translate(-50%, -50%);
+            transition: top 0.3s cubic-bezier(0.5, 0, 0.75, 0); /* Drop animation */
+            box-sizing: border-box;
+        }
+        /* This ensures the pieces render on top of the board SVG */
+        #pieces-container {
+            z-index: 10;
+        }
+        /* Piece colors are now set by CSS variables from JavaScript */
+        .player1 {
+            background-color: var(--player1-color);
+        }
+        .player2 {
+            background-color: var(--player2-color);
+        }
+        .hint-score {
+            position: absolute;
+            transform: translateX(-50%);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #9CA3AF; /* gray-400 */
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="text-white flex items-center justify-center min-h-screen p-4">
+
+<!-- Loading Screen -->
+<div id="loading-screen" class="flex flex-col items-center justify-center text-center">
+    <h1 class="text-4xl md-text-5xl font-bold mb-4">Connect Four</h1>
+    <div class="flex items-center space-x-2">
+        <p class="text-lg text-gray-400">Initialising AI Engine</p>
+        <div class="flex space-x-1.5">
+            <div class="w-2.5 h-2.5 bg-gray-400 rounded-full dot"></div>
+            <div class="w-2.5 h-2.5 bg-gray-400 rounded-full dot"></div>
+            <div class="w-2.5 h-2.5 bg-gray-400 rounded-full dot"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Game Content (Initially Hidden) -->
+<div id="game-content" class="hidden flex flex-col items-center justify-center w-full">
+    <div id="game-board-container" class="relative mb-4">
+        <!-- Game Over Overlay -->
+        <div id="game-over-overlay" class="absolute inset-0 bg-black bg-opacity-60 flex-col items-center justify-center text-white text-4xl font-bold hidden z-20">
+            <p id="game-over-message"></p>
+        </div>
+        <!-- Container for hint scores -->
+        <div id="hints-container" class="absolute -top-8 left-0 w-full h-8"></div>
+        <!-- Hover piece indicator -->
+        <div id="hover-piece" class="game-piece" style="visibility: hidden; opacity: 0.5; z-index: 10;"></div>
+        <!-- Container for dropped pieces -->
+        <div id="pieces-container" class="absolute inset-0"></div>
+        <!-- The board SVG is drawn by JavaScript -->
+        <div id="board-svg-container"></div>
+    </div>
+    <!-- Game Controls -->
+    <div id="controls" class="flex items-center justify-center space-x-4">
+        <button id="menu-btn" class="p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors" >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <button id="reset-btn" class="p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M 21 12 C 21 7.029 16.971 3 12 3 C 7.477 3 3 7.477 3 12 C 3 16.523 7.477 21 12 21 C 15.916 20.975 17.708 19.359 18.304 18.466 M 18.305 18.466 L 14.303 17.235 M 17.597 22.885 L 18.299 18.473" style="" transform="matrix(-1, 0, 0, -1, 23.999999, 23.999999)"></path>
+            </svg>
+        </button>
+        <button id="hint-btn" class="p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Config Modal (hidden by default) -->
+<div id="config-modal" class="fixed inset-0 z-30 hidden flex items-center justify-center">
+    <!-- Backdrop -->
+    <div id="config-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
+    <!-- Panel -->
+    <div role="dialog"
+         class="relative mx-auto my-auto w-[min(90vw,32rem)] rounded-2xl bg-gray-800 ring-1 ring-white/10 shadow-2xl
+            opacity-0 translate-y-4 scale-95 transition-all duration-200"
+         data-panel>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <h2 id="config-title" class="text-xl font-semibold">Configuration</h2>
+            <button id="config-close" class="p-2 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30" >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-5 text-gray-300">
+            <!-- Player Selection -->
+            <div class="mb-4">
+                <label class="block mb-1 font-medium text-white">Player:</label>
+                <select id="playerSelection" class="w-full border rounded p-1 bg-gray-700 text-white">
+                    <option value="player1">Player 1 (Red)</option>
+                    <option value="player2">Player 2 (Yellow)</option>
+                </select>
+            </div>
+
+            <!-- AI Difficulty Options -->
+            <div class="mb-4">
+                <label class="block mb-1 font-medium text-white">AI Difficulty:</label>
+                <select id="aiDifficulty" class="w-full border rounded p-1 bg-gray-700 text-white">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="impossible">Impossible</option>
+                </select>
+            </div>
+
+            <!-- Modal Buttons -->
+            <div class="flex justify-end gap-2">
+                <button id="cancelConfig" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">Cancel</button>
+                <button id="saveConfig" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<!-- AI Worker Script -->
+<script id="worker" type="javascript/worker">
+    let aiPlayer;
+    let wasmModule;
+    let position;
+
+    self.onmessage = async (event) => {
+        const { type, wasmPath, move, difficulty, startPlayer } = event.data;
+        try {
+            if (type === 'init') {
+                wasmModule = await import(wasmPath);
+                await wasmModule.default();
+                const difficultyMap = {
+                    'easy': wasmModule.Difficulty.EASY,
+                    'medium': wasmModule.Difficulty.MEDIUM,
+                    'hard': wasmModule.Difficulty.HARD,
+                    'impossible': wasmModule.Difficulty.IMPOSSIBLE,
+                };
+                const aiDifficulty = difficultyMap[difficulty] || wasmModule.Difficulty.IMPOSSIBLE;
+                aiPlayer = new wasmModule.AIPlayer(aiDifficulty);
+                position = wasmModule.Position.fromMoves("");
+                let initialScores = aiPlayer.getAllMoveScores(position);
+
+                let aiColumn = null;
+                if (startPlayer) {
+                    aiColumn = aiPlayer.selectMove(position, initialScores);
+                    if (aiColumn !== undefined && aiColumn !== null) {
+                        position.play(aiColumn);
+                    }
+                    initialScores = aiPlayer.getAllMoveScores(position);
+                }
+
+                self.postMessage({ type: 'ready', scores: initialScores, aiColumn: aiColumn });
+            } else if (type === 'playerMove') {
+                if (!aiPlayer || !position) throw new Error("Worker not initialised.");
+
+                if (move !== undefined && move !== null) {
+                    position.play(move);
+                    if (position.isWonPosition()) {
+                        self.postMessage({ type: 'gameOver', result: 'win' });
+                        return;
+                    }
+                    if (position.getMoves() === 42) {
+                        self.postMessage({ type: 'gameOver', result: 'draw' });
+                        return;
+                    }
+                }
+
+                const scoresForAI = aiPlayer.getAllMoveScores(position);
+                const aiColumn = aiPlayer.selectMove(position, scoresForAI);
+
+                if (aiColumn !== undefined && aiColumn !== null) {
+                    position.play(aiColumn);
+                    if (position.isWonPosition()) {
+                        self.postMessage({ type: 'aiMove', aiColumn: aiColumn, scores: [], gameOver: 'lose' });
+                        return;
+                    }
+                    if (position.getMoves() === 42) {
+                        self.postMessage({ type: 'aiMove', aiColumn: aiColumn, scores: [], gameOver: 'draw' });
+                        return;
+                    }
+                }
+
+                const scoresForPlayer = aiPlayer.getAllMoveScores(position);
+                self.postMessage({ type: 'aiMove', aiColumn: aiColumn, scores: scoresForPlayer, gameOver: null });
+            }
+        } catch (error) {
+            self.postMessage({ type: 'error', error: error.message });
+        }
+    };
+</script>
+
+<script type="module">
+    // Import only what's needed for the main thread
+    import init from "./node_modules/connect-four-ai-wasm/connect_four_ai_wasm.js";
+
+    const ROWS = 6;
+    const COLS = 7;
+
+    // --- Centralized Color Scheme ---
+    const COLORS = {
+        backgroundStart: '#1F2937',
+        backgroundEnd: '#111827',
+        board: '#374151',
+        emptySlot: '#1F2937',
+        player1: '#DC2626',
+        player1Outline: '#991B1B',
+        player2: '#FBBF24',
+        player2Outline: '#F59E0B',
+    };
+
+    // --- Board SVG Dimensions ---
+    const cell_size = 14;
+    const padding = cell_size * 0.25;
+    const circle_radius = cell_size * 0.45;
+    const piece_radius = circle_radius;
+    const grid_width = COLS * cell_size;
+    const grid_height = ROWS * cell_size;
+    const board_width = grid_width + (padding * 2);
+    const board_height = grid_height + (padding * 2);
+
+    class Board {
+        constructor() {
+            this.grid = Array(ROWS * COLS).fill(0);
+            this.heights = Array(COLS).fill(0);
+        }
+        getGrid() { return this.grid; }
+        isColumnFull(col) { return this.heights[col] >= ROWS; }
+        play(col, player) {
+            if (this.isColumnFull(col)) throw new Error("Column is full");
+            const row = ROWS - 1 - this.heights[col];
+            this.grid[row * COLS + col] = player + 1;
+            this.heights[col]++;
+        }
+    }
+
+    let board;
+    let moveScores = [];
+    let currentPlayer = 0;
+    let isPlayerTurn = true;
+    let isCalculating = false;
+    let showHints = false;
+    let isGameOver = false;
+    let aiWorker;
+
+    const gameBoardContainer = document.getElementById('game-board-container');
+    const piecesContainer = document.getElementById('pieces-container');
+    const hoverPiece = document.getElementById('hover-piece');
+    const hintsContainer = document.getElementById('hints-container');
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    const gameOverMessage = document.getElementById('game-over-message');
+
+    // Modal handles
+    const configModal = document.getElementById('config-modal');
+    const configBackdrop = document.getElementById('config-backdrop');
+    const configPanel = configModal.querySelector('[data-panel]');
+    const configClose = document.getElementById('config-close');
+
+    // --- AI Worker Setup ---
+    function InitialiseWorker(difficulty, startPlayer = false) {
+        const workerScript = document.getElementById('worker').textContent;
+        const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+        aiWorker = new Worker(URL.createObjectURL(workerBlob), { type: 'module' });
+
+        aiWorker.onmessage = (event) => {
+            const { type, aiColumn, scores, error, result } = event.data;
+            if (type === 'aiMove') {
+                moveScores = scores;
+                handleAiMove(aiColumn);
+                renderHints();
+                if (event.data.gameOver) {
+                    endGame(event.data.gameOver);
+                }
+            } else if (type === 'ready') {
+                moveScores = scores;
+                if (aiColumn !== null) {
+                    handleAiMove(aiColumn);
+                }
+                isCalculating = false;
+                renderHints();
+            } else if (type === 'gameOver') {
+                endGame(result);
+            } else if (type === 'error') {
+                console.error("Error from AI Worker:", error);
+                isCalculating = false;
+                isPlayerTurn = true;
+                document.body.style.cursor = 'default';
+            }
+        };
+
+        aiWorker.onerror = (error) => {
+            console.error("An unhandled error occurred in the AI worker:", error.message);
+            isCalculating = false;
+            isPlayerTurn = true;
+            document.body.style.cursor = 'default';
+        };
+
+        const wasmPath = new URL("./node_modules/connect-four-ai-wasm/connect_four_ai_wasm.js", import.meta.url).href;
+        aiWorker.postMessage({ type: 'init', wasmPath: wasmPath, difficulty: difficulty, startPlayer: startPlayer });
+        isCalculating = true;
+    }
+
+    function applyColors() {
+        const root = document.documentElement;
+        root.style.setProperty('--player1-color', COLORS.player1);
+        root.style.setProperty('--player2-color', COLORS.player2);
+        root.style.setProperty('--player1-outline-color', COLORS.player1Outline);
+        root.style.setProperty('--player2-outline-color', COLORS.player2Outline);
+    }
+    function downloadBoardAsPng() {
+        // Hide hints and hover piece before rendering to prevent them from being captured
+        const originalShowHints = showHints;
+        showHints = false;
+        renderHints();
+        hoverPiece.style.visibility = 'hidden';
+
+        // Get the SVG board and pieces container
+        const boardSvgContainer = document.getElementById('board-svg-container');
+        const piecesContainer = document.getElementById('pieces-container');
+        const boardSvg = boardSvgContainer.querySelector('svg');
+
+        // Get the dimensions for the PNG
+        const width = boardSvg.getAttribute('viewBox').split(' ')[2];
+        const height = boardSvg.getAttribute('viewBox').split(' ')[3];
+
+        // Create a new, standalone SVG to combine everything
+        const combinedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        combinedSvg.setAttribute('width', width);
+        combinedSvg.setAttribute('height', height);
+        combinedSvg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        combinedSvg.style.backgroundColor = 'transparent';
+
+        // Clone and append the board SVG (with its masks and filters)
+        const clonedBoardSvg = boardSvg.cloneNode(true);
+        combinedSvg.appendChild(clonedBoardSvg);
+
+        // Append the pieces as SVG circles
+        const boardRect = gameBoardContainer.getBoundingClientRect();
+        const scaleFactor = boardRect.width / board_width;
+        const borderWidth = (piece_radius * 0.15); // Use the base pixel value, not scaled
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const player = board.getGrid()[r * COLS + c];
+                if (player !== 0) {
+                    const cx = padding + (c * cell_size) + (cell_size / 2);
+                    const cy = padding + (r * cell_size) + (cell_size / 2);
+
+                    const pieceCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    pieceCircle.setAttribute('cx', cx);
+                    pieceCircle.setAttribute('cy', cy);
+                    pieceCircle.setAttribute('r', piece_radius);
+                    pieceCircle.setAttribute('fill', player === 1 ? COLORS.player1 : COLORS.player2);
+
+                    // Add the outline using a stroke
+                    pieceCircle.setAttribute('stroke', player === 1 ? COLORS.player1Outline : COLORS.player2Outline);
+                    pieceCircle.setAttribute('stroke-width', borderWidth);
+
+                    combinedSvg.appendChild(pieceCircle);
+                }
+            }
+        }
+
+        // Convert SVG to data URL
+        const svgData = new XMLSerializer().serializeToString(combinedSvg);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        // Create a temporary canvas element
+        const canvas = document.createElement('canvas');
+        canvas.width = width * 4;  // Increase resolution for a sharper image
+        canvas.height = height * 4;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Create a new image to hold the SVG
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Trigger the download
+            const link = document.createElement('a');
+            link.download = 'connect-four-board.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up temporary objects
+            URL.revokeObjectURL(url);
+
+            // Restore hints visibility
+            showHints = originalShowHints;
+            renderHints();
+        };
+
+        img.src = url;
+    }
+
+    function renderPieces() {
+        piecesContainer.innerHTML = '';
+        const grid = board.getGrid();
+        const rect = gameBoardContainer.getBoundingClientRect();
+        if (rect.width === 0) return;
+        const scaleFactor = rect.width / board_width;
+        const pieceDiameter = (piece_radius * 2) * scaleFactor;
+        const borderWidth = (piece_radius * 0.15) * scaleFactor;
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const player = grid[r * COLS + c];
+                if (player !== 0) {
+                    const piece = document.createElement('div');
+                    piece.className = `game-piece player${player}`;
+                    const cx = padding + (c * cell_size) + (cell_size / 2);
+                    const cy = padding + (r * cell_size) + (cell_size / 2);
+
+                    piece.style.left = `${(cx / board_width) * 100}%`;
+                    piece.style.top = `${(cy / board_height) * 100}%`;
+                    piece.style.width = `${pieceDiameter}px`;
+                    piece.style.height = `${pieceDiameter}px`;
+
+                    const outlineColor = player === 1 ? COLORS.player1Outline : COLORS.player2Outline;
+                    piece.style.boxShadow = `inset 0 0 0 ${borderWidth}px ${outlineColor}`;
+
+                    piecesContainer.appendChild(piece);
+                }
+            }
+        }
+    }
+
+    function renderHints() {
+        hintsContainer.innerHTML = '';
+        if (!showHints || isGameOver) return;
+
+        const rect = gameBoardContainer.getBoundingClientRect();
+        if (rect.width === 0) return;
+
+        moveScores.forEach((score, col) => {
+            if (score !== null) {
+                const hint = document.createElement('div');
+                hint.className = 'hint-score';
+                hint.textContent = score;
+
+                const cx = padding + (col * cell_size) + (cell_size / 2);
+                hint.style.left = `${(cx / board_width) * 100}%`;
+                hintsContainer.appendChild(hint);
+            }
+        });
+    }
+
+    function handleAiMove(aiColumn) {
+        if (aiColumn !== undefined && aiColumn !== null && !board.isColumnFull(aiColumn)) {
+            board.play(aiColumn, currentPlayer);
+            renderPieces();
+        }
+        isCalculating = false;
+        isPlayerTurn = true;
+        currentPlayer = (currentPlayer + 1) & 1;
+        document.body.style.cursor = 'default';
+    }
+
+    function handlePlayerMove(col) {
+        if (!isPlayerTurn || board.isColumnFull(col) || isCalculating || isGameOver) return;
+        board.play(col, currentPlayer);
+        renderPieces();
+        currentPlayer = (currentPlayer + 1) & 1;
+        isPlayerTurn = false;
+        isCalculating = true;
+        document.body.style.cursor = 'wait';
+        aiWorker.postMessage({ type: 'playerMove', move: col });
+    }
+
+    function endGame(result) {
+        isGameOver = true;
+        document.body.style.cursor = 'default';
+        isCalculating = false;
+        if (result === 'win') {
+            gameOverMessage.textContent = 'You Win!';
+        } else if (result === 'lose') {
+            gameOverMessage.textContent = 'You Lose!';
+        } else {
+            gameOverMessage.textContent = 'It\'s a Draw!';
+        }
+        gameOverOverlay.style.display = 'flex';
+    }
+
+    function resetGame() {
+        if (aiWorker) aiWorker.terminate();
+        board = new Board();
+        renderPieces();
+        moveScores = [];
+        renderHints();
+        isPlayerTurn = (savedConfig.player === 'player1');
+        currentPlayer = 0;
+        isGameOver = false;
+        gameOverOverlay.style.display = 'none';
+        document.body.style.cursor = 'default';
+        InitialiseWorker(savedConfig.aiDifficulty, !isPlayerTurn);
+    }
+
+    function updateOverlayStyle() {
+        const rect = gameBoardContainer.getBoundingClientRect();
+        if (rect.width === 0) return;
+        const scaleFactor = rect.width / board_width;
+        const borderRadius = circle_radius * scaleFactor;
+        gameOverOverlay.style.borderRadius = `${borderRadius * 0.99}px`;
+    }
+
+    // ----- Config Modal helpers -----
+    let lastActiveElement = null;
+
+    function openConfig() {
+        lastActiveElement = document.activeElement;
+        loadConfig();
+        configModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            configBackdrop.classList.remove('opacity-0');
+            configPanel.classList.remove('opacity-0', 'translate-y-4', 'scale-95');
+        });
+        document.body.style.overflow = 'hidden';
+        configClose.focus();
+    }
+
+    function closeConfig() {
+        configBackdrop.classList.add('opacity-0');
+        configPanel.classList.add('opacity-0', 'translate-y-4', 'scale-95');
+        setTimeout(() => {
+            configModal.classList.add('hidden');
+            document.body.style.overflow = '';
+            if (lastActiveElement) lastActiveElement.focus();
+        }, 200);
+    }
+
+    let savedConfig = {
+        player: 'player1',
+        aiDifficulty: 'impossible',
+    };
+
+    const playerSelection = document.getElementById('playerSelection');
+    const aiDifficulty = document.getElementById('aiDifficulty');
+
+    function loadConfig() {
+        playerSelection.value = savedConfig.player;
+        aiDifficulty.value = savedConfig.aiDifficulty;
+    }
+
+    function saveConfig() {
+        // Read the new values from the dropdowns
+        const newPlayer = playerSelection.value;
+        const newDifficulty = aiDifficulty.value;
+
+        // Update the saved configuration
+        savedConfig.player = newPlayer;
+        savedConfig.aiDifficulty = newDifficulty;
+
+        // The game needs to be reset for the new settings to take effect
+        resetGameWithConfig(newPlayer, newDifficulty);
+
+        // Close the modal
+        closeConfig();
+    }
+
+    function resetGameWithConfig(player, difficulty) {
+        // Kill the old worker if it exists
+        if (aiWorker) aiWorker.terminate();
+
+        // Reset game state variables
+        board = new Board();
+        renderPieces();
+        moveScores = [];
+        renderHints();
+        isPlayerTurn = (player === 'player1');
+        currentPlayer = 0;
+        isGameOver = false;
+        gameOverOverlay.style.display = 'none';
+        document.body.style.cursor = 'default';
+
+
+        // Start a new worker with the new difficulty
+        InitialiseWorker(difficulty, !isPlayerTurn);
+    }
+
+    function setupInteraction() {
+        gameBoardContainer.addEventListener('mousemove', (e) => {
+            if (!isPlayerTurn || isCalculating || isGameOver) {
+                hoverPiece.style.visibility = 'hidden';
+                return;
+            }
+            const rect = gameBoardContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const col = Math.floor(x / (rect.width / COLS));
+
+            if (col >= 0 && col < COLS && !board.isColumnFull(col)) {
+                hoverPiece.style.visibility = 'visible';
+                hoverPiece.className = `game-piece player${currentPlayer + 1}`;
+                hoverPiece.style.opacity = "0.5";
+                const scaleFactor = rect.width / board_width;
+                const pieceDiameter = piece_radius * 2 * scaleFactor;
+                const borderWidth = piece_radius * 0.15 * scaleFactor;
+                hoverPiece.style.width = `${pieceDiameter}px`;
+                hoverPiece.style.height = `${pieceDiameter}px`;
+
+                const outlineColor = currentPlayer === 0 ? COLORS.player1Outline : COLORS.player2Outline;
+                hoverPiece.style.boxShadow = `inset 0 0 0 ${borderWidth}px ${outlineColor}`;
+
+                const cx = padding + (col * cell_size) + (cell_size / 2);
+                const cy = padding + (cell_size / 2);
+                hoverPiece.style.left = `${(cx / board_width) * 100}%`;
+                hoverPiece.style.top = `${(cy / board_height) * 100}%`;
+            } else {
+                hoverPiece.style.visibility = 'hidden';
+            }
+        });
+
+        gameBoardContainer.addEventListener('mouseleave', () => { hoverPiece.style.visibility = 'hidden'; });
+
+        gameBoardContainer.addEventListener('click', (e) => {
+            const rect = gameBoardContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const col = Math.floor(x / (rect.width / COLS));
+            handlePlayerMove(col);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            // close modal on Escape
+            if (!configModal.classList.contains('hidden') && e.key === 'Escape') {
+                e.preventDefault();
+                closeConfig();
+                return;
+            }
+            // Enable to download the board
+            // if (e.key === 'd' || e.key === 'D') {
+            //     e.preventDefault();
+            //     downloadBoardAsPng()
+            // }
+
+            const col = parseInt(e.key) - 1;
+            if (col >= 0 && col < COLS) {
+                handlePlayerMove(col);
+            }
+        });
+
+        // Control button listeners
+        document.getElementById('menu-btn').addEventListener('click', openConfig);
+        document.getElementById('reset-btn').addEventListener('click', resetGame);
+        document.getElementById('hint-btn').addEventListener('click', () => {
+            showHints = !showHints;
+            renderHints();
+        });
+
+        // modal close interactions
+        configClose.addEventListener('click', closeConfig);
+        configBackdrop.addEventListener('click', closeConfig);
+        // Modal buttons
+        document.getElementById('saveConfig').addEventListener('click', saveConfig);
+        document.getElementById('cancelConfig').addEventListener('click', closeConfig);
+
+        // rudimentary focus trap inside the modal
+        configModal.addEventListener('keydown', (e) => {
+            if (configModal.classList.contains('hidden')) return;
+            if (e.key !== 'Tab') return;
+            const focusables = configModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            const elements = Array.from(focusables).filter(el => !el.hasAttribute('disabled'));
+            if (elements.length === 0) return;
+            const first = elements[0];
+            const last = elements[elements.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        });
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('board-svg-container');
+        let circles = '';
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const cx = c * cell_size + cell_size / 2;
+                const cy = r * cell_size + cell_size / 2;
+                circles += `<circle cx="${cx}" cy="${cy}" r="${circle_radius}" fill="black" />`;
+            }
+        }
+        const svg = `
+                <svg viewBox="0 0 ${board_width} ${board_height}" class="w-full h-auto" style="filter: drop-shadow(0 10px 8px rgba(0,0,0,0.2)) drop-shadow(0 4px 3px rgba(0,0,0,0.2));">
+                    <defs>
+                        <filter id="innershadow"><feFlood flood-color="black" flood-opacity="0.5"/><feComposite in2="SourceAlpha" operator="out"/><feGaussianBlur stdDeviation="0.5" result="blur"/><feComposite operator="atop" in2="SourceGraphic"/></filter>
+                        <mask id="board-mask"><rect width="${board_width}" height="${board_height}" fill="white" /><g transform="translate(${padding}, ${padding})">${circles}</g></mask>
+                    </defs>
+                    <rect width="${board_width}" height="${board_height}" fill="${COLORS.board}" mask="url(#board-mask)" rx="${circle_radius}"/>
+                    <g transform="translate(${padding}, ${padding})" filter="url(#innershadow)">${circles.replaceAll('fill="black"', `fill="${COLORS.emptySlot}"`)}</g>
+                </svg>
+            `;
+        container.innerHTML = svg;
+    }
+
+    async function run() {
+        const loadingScreen = document.getElementById('loading-screen');
+        const gameContent = document.getElementById('game-content');
+        try {
+            await init();
+            board = new Board();
+
+            InitialiseWorker(savedConfig.aiDifficulty, !isPlayerTurn);
+
+            loadingScreen.classList.add('hidden');
+            gameContent.classList.remove('hidden');
+
+            applyColors();
+            renderBoard();
+            renderPieces();
+            setupInteraction();
+
+            window.addEventListener('resize', () => {
+                renderPieces();
+                renderHints();
+                updateOverlayStyle();
+            });
+
+            // Set initial overlay style
+            updateOverlayStyle();
+
+        } catch (error) {
+            console.error("Failed to initialise WASM module:", error);
+            loadingScreen.innerHTML = `<h1 class="text-4xl md:text-5xl font-bold mb-4 text-red-500">Error</h1><p class="text-lg text-gray-400">Could not load the engine. Please check the console.</p>`;
+        }
+    }
+
+    run();
+</script>
+</body>
+</html>
