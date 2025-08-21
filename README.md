@@ -37,8 +37,8 @@ primarily based on the techniques described in this [blog](http://blog.gamesolve
 ## Demos
 
 This repository contains two playable demos to showcase the engine's capabilities:
-- **Web Demo**: A fully interactive demo built with WebAssembly. You can play against
-  the AI, analyse positions, and see the solver in action.
+- **Web Demo**: An interactive demo built using simple HTML and JavaScript. You can play against
+  varying AI difficulties, analyse positions, and see the solver in action.
   - [View Live Demo](https://benjaminrall.github.io/connect-four-ai)
   - [View Source (`./web-demo`)](./web-demo)
 - **Python Demo**: A simple Connect Four implementation built with Pygame.
