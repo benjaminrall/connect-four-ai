@@ -1,18 +1,20 @@
 //! A simple container for potential Connect Four moves, sorted by a score heuristic.
 
+use std::mem::MaybeUninit;
+
 use crate::Position;
 
 /// Represents a single potential move entry.
 #[derive(Debug, Copy, Clone, Default)]
 pub struct MoveEntry {
-    pub column: usize,
+    pub column: u8,
     pub score: u8,
 }
 
 /// A fixed-size container that stores a list of moves sorted by score.
 pub struct MoveSorter {
     size: usize,
-    entries: [MoveEntry; Position::WIDTH],
+    entries: [MaybeUninit<MoveEntry>; Position::WIDTH],
 }
 
 impl MoveSorter {
@@ -25,13 +27,29 @@ impl MoveSorter {
     #[inline(always)]
     pub fn add(&mut self, column: usize, score: u8) {
         let mut pos = self.size;
-        while pos > 0 && self.entries[pos - 1].score > score {
-            self.entries[pos] = self.entries[pos - 1];
-            pos -= 1;
+        unsafe {
+            while pos > 0 && self.entries[pos - 1].assume_init_ref().score > score {
+                let prev = *self.entries[pos - 1].assume_init_ref();
+                self.entries[pos].write(prev);
+                pos -= 1;
+            }
+            self.entries[pos].write(MoveEntry {
+                column: column as u8,
+                score,
+            });
         }
-        self.entries[pos].column = column;
-        self.entries[pos].score = score;
         self.size += 1;
+    }
+
+    /// Returns the next move in the sorter without removing it.
+    /// Used for prefetching the next position's TT entry.
+    #[inline(always)]
+    pub fn peek(&self) -> Option<u8> {
+        if self.size == 0 {
+            None
+        } else {
+            unsafe { Some(self.entries[self.size - 1].assume_init_ref().column) }
+        }
     }
 }
 
@@ -45,7 +63,7 @@ impl Iterator for MoveSorter {
             None
         } else {
             self.size -= 1;
-            Some(self.entries[self.size].column)
+            unsafe { Some(self.entries[self.size].assume_init_ref().column as usize) }
         }
     }
 }
@@ -55,7 +73,7 @@ impl Default for MoveSorter {
     fn default() -> MoveSorter {
         MoveSorter {
             size: 0,
-            entries: [MoveEntry::default(); Position::WIDTH],
+            entries: [MaybeUninit::uninit(); Position::WIDTH],
         }
     }
 }
