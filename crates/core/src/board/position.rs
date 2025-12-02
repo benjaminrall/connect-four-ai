@@ -29,8 +29,6 @@ pub struct Position {
     pub position: u64,
     /// A mask of all occupied tiles.
     pub mask: u64,
-    /// The number of moves taken to reach the position.
-    moves: usize,
 }
 
 impl Position {
@@ -117,7 +115,6 @@ impl Position {
         // Values required to construct a `Position`
         let mut position = 0;
         let mut mask = 0;
-        let mut moves = 0;
 
         // Loops through the board string's characters to construct the `Position` bitboards
         for (i, &current_char) in chars.iter().enumerate() {
@@ -138,10 +135,9 @@ impl Position {
             // Uses a bitwise OR to set the calculated bits in the appropriate bitboards
             position |= position_bit << bit_index;
             mask |= 1 << bit_index;
-            moves += 1;
         }
 
-        Ok(Position { position, mask, moves })
+        Ok(Position { position, mask })
     }
 
     /// Parses a `Position` from a string of 1-indexed moves.
@@ -201,7 +197,7 @@ impl Position {
     /// Returns the number of moves played to reach the current position.
     #[inline(always)]
     pub fn get_moves(&self) -> usize {
-        self.moves
+        self.mask.count_ones() as usize
     }
 
     /// Returns the unique key for the current position.
@@ -210,39 +206,22 @@ impl Position {
     /// positions will always have the same solution.
     #[inline(always)]
     pub fn get_key(&self) -> u64 {
-        // Calculates the standard key for a position
         let key = self.position + self.mask;
-
-        // Calculates the key of the mirrored position
-        let (mirrored_pos, mirrored_mask) = self.get_mirrored_bitmasks();
-        let mirrored_key = mirrored_pos + mirrored_mask;
-
-        // Takes the minimum to ensure that symmetrical positions resolve to the same key
+        let mirrored_key = Self::mirror_key(key);
         key.min(mirrored_key)
     }
 
-    /// Returns both of the positions' bitmasks, mirrored horizontally.
-    fn get_mirrored_bitmasks(&self) -> (u64, u64) {
-        let mut mirrored_position = 0;
-        let mut mirrored_mask = 0;
-
-        // Swaps columns within the position and mask up to the centre column
-        for col in 0..Self::CENTRE {
-            let mirrored_col = Self::WIDTH - 1 - col;
-            let shift = (mirrored_col - col) * (Self::HEIGHT + 1);
-            mirrored_position |= ((self.position & Self::column_mask(col)) << shift)
-                | ((self.position & Self::column_mask(mirrored_col)) >> shift);
-            mirrored_mask |= ((self.mask & Self::column_mask(col)) << shift)
-                | ((self.mask & Self::column_mask(mirrored_col)) >> shift);
-        }
-
-        // Keeps the centre column unchanged if there are an odd number of columns
-        if Self::WIDTH & 1 == 1 {
-            mirrored_position |= self.position & Self::column_mask(Self::CENTRE);
-            mirrored_mask |= self.mask & Self::column_mask(Self::CENTRE);
-        }
-
-        (mirrored_position, mirrored_mask)
+    #[inline(always)]
+    fn mirror_key(mut key: u64) -> u64 {
+        let left_block = key & 0x1FFFFF;
+        let right_block = (key >> 28) & 0x1FFFFF;
+        let center = key & 0x0FE00000;
+        key = center | (left_block << 28) | right_block;
+        let mask_pairs = 0x7F000007F;
+        let lower = key & mask_pairs;
+        let upper = key & (mask_pairs << 14);
+        key &= !(mask_pairs | (mask_pairs << 14));
+        key | (lower << 14) | (upper >> 14)
     }
 
     /// Indicates whether a given column is playable.
@@ -289,8 +268,6 @@ impl Position {
 
         // Adds an extra mask bit to the played column
         self.mask |= self.mask + Self::bottom_mask_col(col);
-
-        self.moves += 1;
     }
 
     /// Returns a mask for the possible moves the current player can make.
@@ -320,12 +297,12 @@ impl Position {
     }
 
     /// Returns a mask for the current player's winning positions.
-    fn winning_positions(&self) -> u64 {
+    pub fn winning_positions(&self) -> u64 {
         Self::compute_winning_positions(self.position, self.mask)
     }
 
     /// Returns a mask for the opponent's winning positions.
-    fn opponent_winning_positions(&self) -> u64 {
+    pub fn opponent_winning_positions(&self) -> u64 {
         Self::compute_winning_positions(self.position ^ self.mask, self.mask)
     }
 
@@ -343,32 +320,27 @@ impl Position {
     ///
     /// A bitmask with ones in all positions that a piece could be played by the player to win the game.
     fn compute_winning_positions(position: u64, mask: u64) -> u64 {
-        // Vertical alignment
+        // Vertical alignment (d=1)
+        // Only one pattern possible (XXX.) because of gravity.
         let mut r = (position << 1) & (position << 2) & (position << 3);
 
-        // Horizontal alignment
-        let mut p = (position << (Self::HEIGHT + 1)) & (position << (2 * (Self::HEIGHT + 1)));
-        r |= p & (position << (3 * (Self::HEIGHT + 1)));
-        r |= p & (position >> (Self::HEIGHT + 1));
-        p >>= 3 * (Self::HEIGHT + 1);
-        r |= p & (position << (Self::HEIGHT + 1));
-        r |= p & (position >> (3 * (Self::HEIGHT + 1)));
+        // Horizontal alignment (d=7)
+        let p = (position << 7) & (position << 14);
+        r |= p & ((position << 21) | (position >> 7));
+        let p2 = p >> 21;
+        r |= p2 & ((position >> 21) | (position << 7));
 
-        // Diagonal alignment 1
-        let mut p = (position << Self::HEIGHT) & (position << (2 * Self::HEIGHT));
-        r |= p & (position << (3 * Self::HEIGHT));
-        r |= p & (position >> Self::HEIGHT);
-        p >>= 3 * Self::HEIGHT;
-        r |= p & (position << Self::HEIGHT);
-        r |= p & (position >> (3 * Self::HEIGHT));
+        // Diagonal alignment 1 (d=6)
+        let p = (position << 6) & (position << 12);
+        r |= p & ((position << 18) | (position >> 6));
+        let p2 = p >> 18;
+        r |= p2 & ((position >> 18) | (position << 6));
 
-        // Diagonal alignment 2
-        let mut p = (position << (Self::HEIGHT + 2)) & (position << (2 * (Self::HEIGHT + 2)));
-        r |= p & (position << (3 * (Self::HEIGHT + 2)));
-        r |= p & (position >> (Self::HEIGHT + 2));
-        p >>= 3 * (Self::HEIGHT + 2);
-        r |= p & (position << (Self::HEIGHT + 2));
-        r |= p & (position >> (3 * (Self::HEIGHT + 2)));
+        // Diagonal alignment 2 (d=8)
+        let p = (position << 8) & (position << 16);
+        r |= p & ((position << 24) | (position >> 8));
+        let p2 = p >> 24;
+        r |= p2 & ((position >> 24) | (position << 8));
 
         r & (Self::BOARD_MASK ^ mask)
     }
@@ -463,7 +435,6 @@ impl Default for Position {
         Position {
             position: 0,
             mask: 0,
-            moves: 0,
         }
     }
 }

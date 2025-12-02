@@ -7,6 +7,16 @@ use std::path::Path;
 // The path is relative to the current source file (solver.rs)
 const OPENING_BOOK_BYTES: &[u8] = include_bytes!("books/default-book.bin");
 
+#[inline(always)]
+pub fn unlikely(b: bool) -> bool {
+    if b {
+        #[cold]
+        fn cold_path() {}
+        cold_path();
+    }
+    b
+}
+
 /// A strong solver for finding the exact score of Connect Four positions.
 ///
 /// This struct implements a high-performance negamax search algorithm with several
@@ -63,6 +73,7 @@ impl Solver {
     }
 
     /// Resets the solver's state.
+    #[inline(always)]
     pub fn reset(&mut self) {
         self.explored_positions = 0;
         self.transposition_table.reset();
@@ -96,14 +107,17 @@ impl Solver {
             return score;
         }
 
-        // Checks if the player can win in one move, as negamax does not support this case
-        if position.can_win_next() {
-            return (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2
+        // Pre-compute winning positions for this player and early exit if they already win.
+        let winning_spots = position.winning_positions();
+        let moves = position.get_moves();
+        let depth = (Position::BOARD_SIZE - moves) as u8;
+        if winning_spots & position.possible() > 0 {
+            return (Position::BOARD_SIZE + 1 - moves) as i8 / 2;
         }
 
         // Initial search window is the widest possible score range
-        let mut min = -((Position::BOARD_SIZE - position.get_moves()) as i8) / 2;
-        let mut max = (Position::BOARD_SIZE + 1 - position.get_moves()) as i8 / 2;
+        let mut min = -(depth as i8) / 2;
+        let mut max = (Position::BOARD_SIZE + 1 - moves) as i8 / 2;
 
         while min < max {
             // Binary search for the true score
@@ -115,7 +129,7 @@ impl Solver {
             }
 
             // Performs a null-window search to test if the score is greater than the midpoint
-            let score = self.negamax(position, (Position::BOARD_SIZE - position.get_moves()) as u8, mid, mid + 1);
+            let score = self.negamax_wrapper(*position, mid, mid + 1, winning_spots);
 
             // Adjusts the search window based on the result
             if score <= mid {
@@ -137,7 +151,8 @@ impl Solver {
     /// This array can be used to directly calculate the optimal move to play in a position.
     pub fn get_all_move_scores(&mut self, position: &Position) -> [Option<i8>; Position::WIDTH] {
         let mut scores = [None; Position::WIDTH];
-        let depth = (Position::BOARD_SIZE - position.get_moves()) as u8;
+        let moves = position.get_moves();
+        let depth = (Position::BOARD_SIZE - moves) as u8;
 
         // If the game is won or the position is full, no moves are possible
         if position.is_won_position() || depth == 0 {
@@ -151,7 +166,7 @@ impl Solver {
             }
 
             if position.is_winning_move(column) {
-                scores[column] = Some((Position::BOARD_SIZE - position.get_moves() + 1) as i8 / 2);
+                scores[column] = Some((Position::BOARD_SIZE - moves + 1) as i8 / 2);
             } else {
                 let mut new_position = *position;
                 new_position.play(column);
@@ -162,66 +177,156 @@ impl Solver {
         scores
     }
 
-    /// The core negamax search function with alpha-beta pruning.
-    fn negamax(&mut self, position: &Position, depth: u8, mut alpha: i8, mut beta: i8) -> i8 {
-        self.explored_positions += 1;
+    #[inline(always)]
+    pub fn generate_moves(position: Position, possible_moves_mask: u64) -> MoveSorter {
+        let mut moves = MoveSorter::new();
 
-        // Checks for a drawn game
-        if depth == 0 {
-            return 0;
-        }
-
-        // Transposition table look-up
-        let original_alpha = alpha;
-        let key = position.get_key();
-        if let Some(entry) = self.transposition_table.get(key) {
-            if entry.depth >= depth {
-                match entry.flag {
-                    TTFlag::Exact => return entry.value,
-                    TTFlag::LowerBound if entry.value >= beta => return entry.value,
-                    TTFlag::UpperBound if entry.value <= alpha => return entry.value,
-                    _ => {} // Can't use the entry, so continue the search.
+        if possible_moves_mask.count_ones() == 1 {
+            let column = (possible_moves_mask.trailing_zeros() / 7) as usize;
+            moves.add(column, 0);
+        } else {
+            for &column in Self::COLUMNS.iter().rev() {
+                let move_bit = possible_moves_mask & Position::column_mask(column);
+                if move_bit > 0 {
+                    moves.add(column, position.score_move(move_bit))
                 }
             }
         }
+        moves
+    }
+
+    #[inline(always)]
+    fn negamax_wrapper(
+        &mut self,
+        position: Position,
+        alpha: i8,
+        beta: i8,
+        next_winning_spots: u64,
+    ) -> i8 {
+
+        let depth = (Position::BOARD_SIZE - position.get_moves()) as u8;
+
+        // Checks for a drawn game
+        if unlikely(depth == 0) {
+            return 0;
+        }
+
+        // Use the mask from the parent to detect an immediate win without recomputing.
+        if unlikely(next_winning_spots & position.possible() > 0) {
+            return (depth as i8 + 1) / 2;
+        }
+
+        self.negamax(position, alpha, beta)
+    }
+
+    /// The core negamax search function with alpha-beta pruning.
+    fn negamax(
+        &mut self,
+        position: Position,
+        mut alpha: i8,
+        mut beta: i8,
+    ) -> i8 {
+        self.explored_positions += 1;
+
+        let (key, tt_index) = {
+            let key = position.get_key();
+            let tt_index = self.transposition_table.index(key);
+            self.transposition_table.prefetch_index(tt_index);
+            (key, tt_index)
+        };
+
+        // Calculate opponent threats once and reuse the mask for the children.
+        let opponent_winning_spots = position.opponent_winning_positions();
+        let depth = (Position::BOARD_SIZE - position.get_moves()) as u8;
+        let mut possible_moves = position.possible();
 
         // Move generation and pruning
-        let possible_moves = position.possible_non_losing_moves();
-        if possible_moves == 0 {
+        let forced_moves = possible_moves & opponent_winning_spots;
+        if unlikely(forced_moves > 0) {
+            if forced_moves & (forced_moves - 1) > 0 {
+                return -(depth as i8) / 2;
+            }
+            possible_moves = forced_moves;
+        }
+
+        possible_moves &= !(opponent_winning_spots >> 1);
+        if unlikely(possible_moves == 0) {
             // If there are no possible non-losing moves, then the opponent is guaranteed to win
-            return -((Position::BOARD_SIZE - position.get_moves()) as i8) / 2;
+            return -(depth as i8) / 2;
         }
 
         // Tightens the lower bound as the opponent cannot win next move
-        let min = -((Position::BOARD_SIZE - position.get_moves()) as i8 - 2) / 2;
+        let min = -((depth as i8) - 2) / 2;
         if alpha < min {
             if min >= beta { return min }
             alpha = min;
         }
 
         // Tightens the upper bound as we cannot win immediately
-        let max = ((Position::BOARD_SIZE - position.get_moves()) as i8 - 1) / 2;
+        let max = ((depth as i8) - 1) / 2;
         if beta > max {
             if alpha >= max { return max }
             beta = max;
         }
 
-        // Scores and sorts possible moves to explore the best ones first
-        let mut moves = MoveSorter::new();
-        for &column in Self::COLUMNS.iter().rev() {
-            let move_bit = possible_moves & Position::column_mask(column);
-            if move_bit > 0 {
-                moves.add(column, position.score_move(move_bit))
+        // Transposition table look-up
+        let original_alpha = alpha;
+        let mut tt_best_move = 7;
+        if let Some(entry) = self.transposition_table.get_at_index(key, tt_index) {
+            let entry_value = entry.value();
+            match entry.flag() {
+                TTFlag::Exact => return entry_value,
+                TTFlag::LowerBound if entry_value >= beta => return entry_value,
+                TTFlag::UpperBound if entry_value <= alpha => return entry_value,
+                _ => {}
             }
+            tt_best_move = entry.best_move();
         }
+
+        let mut best_move_col = tt_best_move;
+        let mut possible_moves_mask = possible_moves;
+        let tt_move_available = tt_best_move < 7
+            && (possible_moves_mask & Position::column_mask(tt_best_move as usize)) != 0;
+
+        if tt_move_available {
+            let mut new_position = position;
+            new_position.play(tt_best_move as usize);
+            let score = -self.negamax_wrapper(
+                new_position,
+                -beta,
+                -alpha,
+                opponent_winning_spots,
+            );
+            if score > alpha {
+                alpha = score;
+                best_move_col = tt_best_move;
+            }
+            if alpha >= beta {
+                self.transposition_table
+                    .put_at_index(key, alpha, TTFlag::LowerBound, best_move_col, depth, tt_index);
+                return alpha;
+            }
+
+            // Mask out the move so we don't generate it again in the loop
+            possible_moves_mask &= !Position::column_mask(tt_best_move as usize);
+        }
+
+        // Scores and sorts possible moves to explore the best ones first
+        let moves = Self::generate_moves(position, possible_moves_mask);
 
         // Computes the scores of all possible next moves, keeping the best
         for column in moves {
-            let mut new_position = *position;
+            let mut new_position = position;
             new_position.play(column);
-            let score = -self.negamax(&new_position, depth - 1, -beta, -alpha);
+            let score = -self.negamax_wrapper(
+                new_position,
+                -beta,
+                -alpha,
+                opponent_winning_spots,
+            );
             if score > alpha {
                 alpha = score;
+                best_move_col = column as u8;
             }
 
             // Stops searching if a score is found outside the search window
@@ -238,7 +343,8 @@ impl Solver {
         } else {
             TTFlag::Exact
         };
-        self.transposition_table.put(key, alpha, flag, depth);
+        self.transposition_table
+            .put_at_index(key, alpha, flag, best_move_col, depth, tt_index);
 
         alpha
     }
